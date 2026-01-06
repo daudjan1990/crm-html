@@ -73,9 +73,10 @@ class CRMApp {
             return false;
         }
 
-        // Check for basic ES6 support
+        // Check for basic ES6 support (arrow functions, const, etc.)
         try {
-            eval('const test = () => {};');
+            // Test for arrow function support
+            new Function('() => {}');
         } catch (e) {
             alert('Warning: Your browser may not fully support this application. Please use a modern browser.');
             return false;
