@@ -269,6 +269,12 @@ class TaskManager {
         
         if (!container) return;
 
+        // Create customer lookup
+        const customerMap = {};
+        customers.forEach(c => {
+            customerMap[c.id] = c.name;
+        });
+
         // Apply filters
         let filteredTasks = tasks;
         
@@ -310,12 +316,6 @@ class TaskManager {
             `;
             return;
         }
-
-        // Create customer lookup
-        const customerMap = {};
-        customers.forEach(c => {
-            customerMap[c.id] = c.name;
-        });
 
         // Sort tasks by priority (high > medium > low) then by deadline
         const PRIORITY_ORDER = { 'high': 3, 'medium': 2, 'low': 1 };
