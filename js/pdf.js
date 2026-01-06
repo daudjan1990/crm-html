@@ -92,6 +92,7 @@ class PDFManager {
         `;
 
         customers.forEach((customer, index) => {
+            const status = customer.status || 'onboarding';
             html += `
                 <tr class="print-item">
                     <td><strong>${this.escapeHtml(customer.name)}</strong></td>
@@ -99,7 +100,7 @@ class PDFManager {
                     <td>${this.escapeHtml(customer.companyNumber)}</td>
                     <td>${this.escapeHtml(customer.email || '-')}</td>
                     <td>${this.escapeHtml(customer.phone || '-')}</td>
-                    <td><span class="print-badge print-badge-${customer.status || 'onboarding'}">${this.getCustomerStatusLabel(customer.status)}</span></td>
+                    <td><span class="print-badge print-badge-${status}">${this.getCustomerStatusLabel(status)}</span></td>
                 </tr>
             `;
         });
@@ -189,6 +190,8 @@ class PDFManager {
         tasks.forEach((task, index) => {
             const customerName = customerMap[task.customerId] || 'Unknown';
             const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'completed';
+            const priority = task.priority || 'medium';
+            const status = task.status || 'pending';
             
             html += `
                 <tr class="print-item">
@@ -196,8 +199,8 @@ class PDFManager {
                     <td><strong>${this.escapeHtml(task.description)}</strong>${isOverdue ? ' <span class="print-overdue">⚠ OVERDUE</span>' : ''}</td>
                     <td>${this.formatDate(task.deadline)}</td>
                     <td>${this.escapeHtml(task.responsible)}</td>
-                    <td><span class="print-badge print-badge-${task.priority || 'medium'}">${this.getPriorityLabel(task.priority)}</span></td>
-                    <td><span class="print-badge print-badge-${task.status || 'pending'}">${this.getStatusLabel(task.status)}</span></td>
+                    <td><span class="print-badge print-badge-${priority}">${this.getPriorityLabel(priority)}</span></td>
+                    <td><span class="print-badge print-badge-${status}">${this.getStatusLabel(status)}</span></td>
                 </tr>
             `;
         });
@@ -300,14 +303,16 @@ class PDFManager {
             `;
 
             customerTasks.forEach((task, index) => {
+                const priority = task.priority || 'medium';
+                const status = task.status || 'pending';
                 html += `
                     <div class="print-item">
                         <div class="print-item-title">${this.escapeHtml(task.description)}</div>
                         <div class="print-item-content">
                             <div class="print-item-field"><strong>Deadline:</strong> ${this.formatDate(task.deadline)}</div>
                             <div class="print-item-field"><strong>Responsible:</strong> ${this.escapeHtml(task.responsible)}</div>
-                            <div class="print-item-field"><strong>Priority:</strong> <span class="print-badge print-badge-${task.priority || 'medium'}">${this.getPriorityLabel(task.priority)}</span></div>
-                            <div class="print-item-field"><strong>Status:</strong> <span class="print-badge print-badge-${task.status || 'pending'}">${this.getStatusLabel(task.status)}</span></div>
+                            <div class="print-item-field"><strong>Priority:</strong> <span class="print-badge print-badge-${priority}">${this.getPriorityLabel(priority)}</span></div>
+                            <div class="print-item-field"><strong>Status:</strong> <span class="print-badge print-badge-${status}">${this.getStatusLabel(status)}</span></div>
                             ${task.notes ? `<div class="print-item-field"><strong>Notes:</strong> ${this.escapeHtml(task.notes)}</div>` : ''}
                         </div>
                     </div>
