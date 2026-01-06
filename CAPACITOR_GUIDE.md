@@ -116,7 +116,21 @@ Edit `capacitor.config.json`:
 
 Then run `npx cap sync ios`.
 
-### Bundle Identifier
+### App ID (Bundle Identifier)
+
+**Important**: Before building for App Store, change the placeholder app ID in `capacitor.config.json`:
+
+```json
+{
+  "appId": "com.yourcompany.crmapp"
+}
+```
+
+Replace `com.yourcompany.crmapp` with your own reverse domain name (e.g., `com.acme.crmapp`).
+
+Then run `npx cap sync ios`.
+
+### Bundle Identifier in Xcode
 
 In Xcode:
 1. Select the project

@@ -46,9 +46,6 @@ class WebViewStore: ObservableObject {
         // Allow inline media playback
         configuration.allowsInlineMediaPlayback = true
         
-        // Configure for local file access
-        configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-        
         webView = WKWebView(frame: .zero, configuration: configuration)
         
         // Set navigation delegate
@@ -73,12 +70,8 @@ class NavigationDelegate: NSObject, WKNavigationDelegate, ObservableObject {
     static let shared = NavigationDelegate()
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        // Hide loading indicator
-        if let store = webView.value(forKey: "store") as? WebViewStore {
-            DispatchQueue.main.async {
-                store.isLoading = false
-            }
-        }
+        // Page finished loading - loading indicator will be hidden by the view
+        print("WebView finished loading")
     }
     
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {

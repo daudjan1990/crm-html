@@ -1,5 +1,5 @@
 {
-  "appId": "com.yourcompany.crmapp",
+  "appId": "com.example.crmapp",
   "appName": "CRM App",
   "webDir": ".",
   "bundledWebRuntime": false,
