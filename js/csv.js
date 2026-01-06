@@ -11,7 +11,7 @@ class CSVManager {
         }
 
         // Define CSV headers
-        const headers = ['ID', 'Name', 'Ansprechpartner', 'Betriebenummer', 'Email', 'Phone', 'Address', 'Created At'];
+        const headers = ['ID', 'Name', 'Ansprechpartner', 'Betriebenummer', 'Email', 'Phone', 'Address', 'Status', 'Created At'];
         
         // Convert data to CSV format
         const csvContent = this.convertToCSV(customers, headers, (customer) => [
@@ -22,6 +22,7 @@ class CSVManager {
             customer.email || '',
             customer.phone || '',
             customer.address || '',
+            customer.status || 'onboarding',
             customer.createdAt || ''
         ]);
 
@@ -127,7 +128,8 @@ class CSVManager {
                                 companyNumber: values[3] || '',
                                 email: values[4] || '',
                                 phone: values[5] || '',
-                                address: values[6] || ''
+                                address: values[6] || '',
+                                status: values[7] || 'onboarding'
                             };
 
                             // Validate required fields

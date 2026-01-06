@@ -253,6 +253,63 @@ main {
     border: 1px solid #22c55e;
 }
 
+.customer-status-onboarding {
+    background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%);
+    color: #0f1419;
+    border: 1px solid #d4af37;
+}
+
+.customer-status-in-progress {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    color: #ffffff;
+    border: 1px solid #1e3a8a;
+}
+
+.customer-status-finished {
+    background-color: #166534;
+    color: #86efac;
+    border: 1px solid #22c55e;
+}
+
+.finished-customer-section {
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, #1e2836 0%, #1a2332 100%);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.finished-customer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.finished-customer-header h3 {
+    color: #d4af37;
+    font-size: 20px;
+    margin: 0;
+}
+
+.finished-customer-info {
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+.finished-tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.finished-task-item {
+    background: linear-gradient(135deg, #242d3d 0%, #1e2836 100%);
+    border-left-color: #22c55e;
+}
+
 .empty-state {
     text-align: center;
     padding: 60px 20px;
