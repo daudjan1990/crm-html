@@ -602,15 +602,278 @@ main {
     }
 }
 
+/* Print Preview Styles */
+.print-preview-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.95);
+    z-index: 2000;
+    overflow: auto;
+}
+
+.print-preview-container.active {
+    display: block;
+}
+
+.print-preview-header {
+    position: sticky;
+    top: 0;
+    background-color: #1a2332;
+    padding: 15px 20px;
+    border-bottom: 2px solid #d4af37;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 2001;
+}
+
+.print-preview-header h2 {
+    color: #d4af37;
+    margin: 0;
+}
+
+.print-preview-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.print-preview-content {
+    max-width: 210mm;
+    margin: 20px auto;
+    background: white;
+    padding: 20mm;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    min-height: 297mm;
+}
+
+/* Print Styles */
 @media print {
+    body * {
+        visibility: hidden;
+    }
+
+    .print-preview-container,
+    .print-preview-container * {
+        visibility: visible;
+    }
+
+    .print-preview-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: auto;
+        background: white;
+        overflow: visible;
+    }
+
+    .print-preview-header,
+    .print-preview-actions {
+        display: none !important;
+    }
+
+    .print-preview-content {
+        margin: 0;
+        padding: 15mm;
+        box-shadow: none;
+        max-width: 100%;
+        min-height: 0;
+    }
+
+    /* Prevent page breaks inside items */
+    .print-item {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* Ensure clean page breaks */
+    .print-section {
+        page-break-after: auto;
+    }
+}
+
+/* Print Document Styles */
+.print-document {
+    font-family: Arial, sans-serif;
+    color: #000;
+    line-height: 1.6;
+}
+
+.print-header {
+    margin-bottom: 25px;
+    border-bottom: 3px solid #1e3a8a;
+    padding-bottom: 15px;
+}
+
+.print-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #1e3a8a;
+    margin: 0 0 10px 0;
+}
+
+.print-meta {
+    font-size: 12px;
+    color: #666;
+}
+
+.print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.print-table th {
+    background-color: #1e3a8a;
+    color: white;
+    padding: 12px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    border: 1px solid #1a2332;
+}
+
+.print-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    font-size: 12px;
+    vertical-align: top;
+}
+
+/* Alternating shades for tasks - two distinct shades */
+.print-table tbody tr:nth-child(4n+1),
+.print-table tbody tr:nth-child(4n+2) {
+    background-color: #f8f9fa;
+}
+
+.print-table tbody tr:nth-child(4n+3),
+.print-table tbody tr:nth-child(4n+4) {
+    background-color: #e9ecef;
+}
+
+.print-section {
+    margin-bottom: 30px;
+}
+
+.print-section-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #1e3a8a;
+    margin: 25px 0 15px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #d4af37;
+}
+
+.print-item {
+    margin-bottom: 15px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-left: 4px solid #1e3a8a;
+    background-color: #f8f9fa;
+}
+
+.print-item:nth-child(even) {
+    background-color: #e9ecef;
+}
+
+.print-item-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e3a8a;
+    margin-bottom: 8px;
+}
+
+.print-item-content {
+    font-size: 12px;
+    color: #333;
+}
+
+.print-item-field {
+    margin-bottom: 5px;
+}
+
+.print-item-field strong {
+    color: #1e3a8a;
+    font-weight: 600;
+}
+
+.print-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.print-badge-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.print-badge-in-progress {
+    background-color: #2563eb;
+    color: #fff;
+}
+
+.print-badge-completed {
+    background-color: #22c55e;
+    color: #fff;
+}
+
+.print-badge-low {
+    background-color: #6b7280;
+    color: #fff;
+}
+
+.print-badge-medium {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.print-badge-high {
+    background-color: #dc2626;
+    color: #fff;
+}
+
+.print-customer-group {
+    margin-bottom: 25px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    background-color: #f8f9fa;
+}
+
+.print-customer-group:nth-child(even) {
+    background-color: #e9ecef;
+}
+
+.print-customer-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #1e3a8a;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #d4af37;
+}
+
+.print-footer {
+    margin-top: 30px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+    text-align: center;
+    font-size: 11px;
+    color: #666;
+}
+
+@media screen {
     .btn,
     .action-buttons,
     .data-item-actions,
     nav {
-        display: none;
-    }
-
-    .modal {
-        display: none;
+        display: block;
     }
 }

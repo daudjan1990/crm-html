@@ -1,36 +1,59 @@
-// pdf.js - Handles PDF export functionality using jsPDF
+// pdf.js - Handles print preview functionality for creating printable PDFs
 
 class PDFManager {
     constructor() {
-        // Check if jsPDF is available
-        this.isLibraryLoaded = false;
-        this.checkLibraryLoaded();
+        this.previewContainer = null;
+        this.setupPrintPreviewContainer();
     }
 
-    checkLibraryLoaded() {
-        // Check periodically if jsPDF has loaded
-        const checkInterval = setInterval(() => {
-            if (typeof window.jspdf !== 'undefined') {
-                this.isLibraryLoaded = true;
-                clearInterval(checkInterval);
-                console.log('jsPDF library loaded successfully');
-            }
-        }, 100);
-
-        // Stop checking after 5 seconds
-        setTimeout(() => {
-            clearInterval(checkInterval);
-            if (!this.isLibraryLoaded) {
-                console.warn('jsPDF library not loaded - PDF export will not be available offline');
-            }
-        }, 5000);
+    setupPrintPreviewContainer() {
+        // Create print preview container if it doesn't exist
+        if (!document.getElementById('print-preview-container')) {
+            const container = document.createElement('div');
+            container.id = 'print-preview-container';
+            container.className = 'print-preview-container';
+            container.innerHTML = `
+                <div class="print-preview-header">
+                    <h2>Print Preview</h2>
+                    <div class="print-preview-actions">
+                        <button class="btn btn-primary" onclick="pdfManager.print()">Print</button>
+                        <button class="btn btn-secondary" onclick="pdfManager.closePrintPreview()">Close</button>
+                    </div>
+                </div>
+                <div class="print-preview-content" id="print-preview-content"></div>
+            `;
+            document.body.appendChild(container);
+            this.previewContainer = container;
+        }
     }
 
-    isAvailable() {
-        return this.isLibraryLoaded && typeof window.jspdf !== 'undefined';
+    openPrintPreview(htmlContent) {
+        const contentDiv = document.getElementById('print-preview-content');
+        if (contentDiv) {
+            contentDiv.innerHTML = htmlContent;
+        }
+        
+        this.previewContainer = document.getElementById('print-preview-container');
+        if (this.previewContainer) {
+            this.previewContainer.classList.add('active');
+            // Prevent body scroll when preview is open
+            document.body.style.overflow = 'hidden';
+        }
     }
 
-    // Export customers to PDF
+    closePrintPreview() {
+        if (this.previewContainer) {
+            this.previewContainer.classList.remove('active');
+            // Restore body scroll
+            document.body.style.overflow = '';
+        }
+    }
+
+    print() {
+        window.print();
+    }
+
+    // Export customers to printable format
     exportCustomersToPDF() {
         const customers = storage.getCustomers();
         
@@ -39,80 +62,86 @@ class PDFManager {
             return;
         }
 
-        if (!this.isAvailable()) {
-            alert('PDF export is not available. The PDF library could not be loaded. This may happen when working offline. Please use CSV export instead.');
-            return;
-        }
-
-        try {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // Add title
-            doc.setFontSize(20);
-            doc.text('Customer Report', 14, 20);
-            
-            // Add date
-            doc.setFontSize(10);
-            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
-            
-            // Prepare table data
-            const tableData = customers.map(customer => [
-                customer.name,
-                customer.contact,
-                customer.companyNumber,
-                customer.email || '-',
-                customer.phone || '-'
-            ]);
-            
-            // Add table
-            doc.autoTable({
-                head: [['Name', 'Contact Person', 'Company Number', 'Email', 'Phone']],
-                body: tableData,
-                startY: 35,
-                styles: { fontSize: 9 },
-                headStyles: { fillColor: [52, 152, 219] }
-            });
-            
-            // Add customer details on separate pages if needed
-            let currentY = doc.lastAutoTable.finalY + 10;
-            
-            customers.forEach((customer, index) => {
-                if (customer.address) {
-                    // Check if we need a new page
-                    if (currentY > 250) {
-                        doc.addPage();
-                        currentY = 20;
-                    }
-                    
-                    doc.setFontSize(12);
-                    doc.setFont(undefined, 'bold');
-                    doc.text(`${customer.name}`, 14, currentY);
-                    currentY += 7;
-                    
-                    doc.setFontSize(10);
-                    doc.setFont(undefined, 'normal');
-                    
-                    if (customer.address) {
-                        doc.text(`Address: ${customer.address}`, 14, currentY);
-                        currentY += 7;
-                    }
-                    
-                    currentY += 5; // Extra spacing
-                }
-            });
-            
-            // Save the PDF
-            const timestamp = new Date().toISOString().split('T')[0];
-            doc.save(`customers-report-${timestamp}.pdf`);
-            
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-            alert('Error generating PDF. The PDF library may not be loaded. Please try using CSV export instead or check your internet connection if working online.');
-        }
+        const html = this.generateCustomersHTML(customers);
+        this.openPrintPreview(html);
     }
 
-    // Export tasks to PDF
+    generateCustomersHTML(customers) {
+        const now = new Date();
+        const dateStr = now.toLocaleString();
+        
+        let html = `
+            <div class="print-document">
+                <div class="print-header">
+                    <h1 class="print-title">Customer Report</h1>
+                    <div class="print-meta">Generated: ${this.escapeHtml(dateStr)} | Total Customers: ${customers.length}</div>
+                </div>
+                
+                <table class="print-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Contact Person</th>
+                            <th>Company Number</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        customers.forEach((customer, index) => {
+            html += `
+                <tr class="print-item">
+                    <td><strong>${this.escapeHtml(customer.name)}</strong></td>
+                    <td>${this.escapeHtml(customer.contact)}</td>
+                    <td>${this.escapeHtml(customer.companyNumber)}</td>
+                    <td>${this.escapeHtml(customer.email || '-')}</td>
+                    <td>${this.escapeHtml(customer.phone || '-')}</td>
+                    <td><span class="print-badge print-badge-${customer.status}">${this.getCustomerStatusLabel(customer.status)}</span></td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+        `;
+
+        // Add detailed information for customers with addresses
+        const customersWithDetails = customers.filter(c => c.address);
+        if (customersWithDetails.length > 0) {
+            html += `
+                <div class="print-section">
+                    <h2 class="print-section-title">Customer Details</h2>
+            `;
+
+            customersWithDetails.forEach((customer, index) => {
+                html += `
+                    <div class="print-item">
+                        <div class="print-item-title">${this.escapeHtml(customer.name)}</div>
+                        <div class="print-item-content">
+                            ${customer.address ? `<div class="print-item-field"><strong>Address:</strong> ${this.escapeHtml(customer.address)}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+        }
+
+        html += `
+                <div class="print-footer">
+                    CRM Application - Customer Report
+                </div>
+            </div>
+        `;
+
+        return html;
+    }
+
+    // Export tasks to printable format
     exportTasksToPDF() {
         const tasks = storage.getTasks();
         const customers = storage.getCustomers();
@@ -122,193 +151,192 @@ class PDFManager {
             return;
         }
 
-        if (!this.isAvailable()) {
-            alert('PDF export is not available. The PDF library could not be loaded. This may happen when working offline. Please use CSV export instead.');
-            return;
-        }
-
-        try {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // Create customer lookup
-            const customerMap = {};
-            customers.forEach(c => {
-                customerMap[c.id] = c.name;
-            });
-            
-            // Add title
-            doc.setFontSize(20);
-            doc.text('Task Report', 14, 20);
-            
-            // Add date
-            doc.setFontSize(10);
-            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
-            
-            // Prepare table data
-            const tableData = tasks.map(task => [
-                customerMap[task.customerId] || 'Unknown',
-                task.description,
-                task.deadline,
-                task.responsible,
-                this.getStatusLabel(task.status)
-            ]);
-            
-            // Add table
-            doc.autoTable({
-                head: [['Customer', 'Description', 'Deadline', 'Responsible', 'Status']],
-                body: tableData,
-                startY: 35,
-                styles: { fontSize: 9 },
-                headStyles: { fillColor: [52, 152, 219] },
-                columnStyles: {
-                    1: { cellWidth: 50 }
-                }
-            });
-            
-            // Add task details with notes
-            let currentY = doc.lastAutoTable.finalY + 10;
-            
-            tasks.forEach((task, index) => {
-                if (task.notes) {
-                    // Check if we need a new page
-                    if (currentY > 250) {
-                        doc.addPage();
-                        currentY = 20;
-                    }
-                    
-                    doc.setFontSize(12);
-                    doc.setFont(undefined, 'bold');
-                    doc.text(`${task.description}`, 14, currentY);
-                    currentY += 7;
-                    
-                    doc.setFontSize(10);
-                    doc.setFont(undefined, 'normal');
-                    doc.text(`Customer: ${customerMap[task.customerId] || 'Unknown'}`, 14, currentY);
-                    currentY += 6;
-                    
-                    // Wrap notes text
-                    const notesLines = doc.splitTextToSize(`Notes: ${task.notes}`, 180);
-                    doc.text(notesLines, 14, currentY);
-                    currentY += (notesLines.length * 5) + 5;
-                    
-                    currentY += 3; // Extra spacing
-                }
-            });
-            
-            // Save the PDF
-            const timestamp = new Date().toISOString().split('T')[0];
-            doc.save(`tasks-report-${timestamp}.pdf`);
-            
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-            alert('Error generating PDF. The PDF library may not be loaded. Please try using CSV export instead or check your internet connection if working online.');
-        }
+        const html = this.generateTasksHTML(tasks, customers);
+        this.openPrintPreview(html);
     }
 
-    // Export combined report (customers and tasks)
-    exportCombinedPDF() {
-        const customers = storage.getCustomers();
-        const tasks = storage.getTasks();
+    generateTasksHTML(tasks, customers) {
+        const now = new Date();
+        const dateStr = now.toLocaleString();
         
-        if (customers.length === 0 && tasks.length === 0) {
-            alert('No data to export');
-            return;
+        // Create customer lookup
+        const customerMap = {};
+        customers.forEach(c => {
+            customerMap[c.id] = c.name;
+        });
+
+        let html = `
+            <div class="print-document">
+                <div class="print-header">
+                    <h1 class="print-title">Task Report</h1>
+                    <div class="print-meta">Generated: ${this.escapeHtml(dateStr)} | Total Tasks: ${tasks.length}</div>
+                </div>
+                
+                <table class="print-table">
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Description</th>
+                            <th>Deadline</th>
+                            <th>Responsible</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        tasks.forEach((task, index) => {
+            const customerName = customerMap[task.customerId] || 'Unknown';
+            const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'completed';
+            
+            html += `
+                <tr class="print-item">
+                    <td>${this.escapeHtml(customerName)}</td>
+                    <td><strong>${this.escapeHtml(task.description)}</strong>${isOverdue ? ' <span style="color: #dc2626;">⚠ OVERDUE</span>' : ''}</td>
+                    <td>${this.formatDate(task.deadline)}</td>
+                    <td>${this.escapeHtml(task.responsible)}</td>
+                    <td><span class="print-badge print-badge-${task.priority || 'medium'}">${this.getPriorityLabel(task.priority)}</span></td>
+                    <td><span class="print-badge print-badge-${task.status}">${this.getStatusLabel(task.status)}</span></td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+        `;
+
+        // Add detailed task notes
+        const tasksWithNotes = tasks.filter(t => t.notes);
+        if (tasksWithNotes.length > 0) {
+            html += `
+                <div class="print-section">
+                    <h2 class="print-section-title">Task Notes</h2>
+            `;
+
+            tasksWithNotes.forEach((task, index) => {
+                const customerName = customerMap[task.customerId] || 'Unknown';
+                html += `
+                    <div class="print-item">
+                        <div class="print-item-title">${this.escapeHtml(task.description)}</div>
+                        <div class="print-item-content">
+                            <div class="print-item-field"><strong>Customer:</strong> ${this.escapeHtml(customerName)}</div>
+                            <div class="print-item-field"><strong>Notes:</strong> ${this.escapeHtml(task.notes)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
         }
 
-        if (!this.isAvailable()) {
-            alert('PDF export is not available. The PDF library could not be loaded. This may happen when working offline. Please use CSV export instead.');
-            return;
-        }
+        html += `
+                <div class="print-footer">
+                    CRM Application - Task Report
+                </div>
+            </div>
+        `;
 
-        try {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // Add title
-            doc.setFontSize(20);
-            doc.text('CRM Complete Report', 14, 20);
-            
-            // Add date
-            doc.setFontSize(10);
-            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
-            
-            let currentY = 40;
-            
-            // Customers section
-            if (customers.length > 0) {
-                doc.setFontSize(16);
-                doc.setFont(undefined, 'bold');
-                doc.text('Customers', 14, currentY);
-                currentY += 10;
-                
-                const customerData = customers.map(c => [
-                    c.name,
-                    c.contact,
-                    c.companyNumber,
-                    c.email || '-'
-                ]);
-                
-                doc.autoTable({
-                    head: [['Name', 'Contact Person', 'Company Number', 'Email']],
-                    body: customerData,
-                    startY: currentY,
-                    styles: { fontSize: 9 },
-                    headStyles: { fillColor: [52, 152, 219] }
-                });
-                
-                currentY = doc.lastAutoTable.finalY + 15;
-            }
-            
-            // Tasks section
-            if (tasks.length > 0) {
-                // Check if we need a new page
-                if (currentY > 200) {
-                    doc.addPage();
-                    currentY = 20;
-                }
-                
-                doc.setFontSize(16);
-                doc.setFont(undefined, 'bold');
-                doc.text('Tasks', 14, currentY);
-                currentY += 10;
-                
-                const customerMap = {};
-                customers.forEach(c => {
-                    customerMap[c.id] = c.name;
-                });
-                
-                const taskData = tasks.map(t => [
-                    customerMap[t.customerId] || 'Unknown',
-                    t.description,
-                    t.deadline,
-                    t.responsible,
-                    this.getStatusLabel(t.status)
-                ]);
-                
-                doc.autoTable({
-                    head: [['Customer', 'Description', 'Deadline', 'Responsible', 'Status']],
-                    body: taskData,
-                    startY: currentY,
-                    styles: { fontSize: 8 },
-                    headStyles: { fillColor: [52, 152, 219] },
-                    columnStyles: {
-                        1: { cellWidth: 45 }
-                    }
-                });
-            }
-            
-            // Save the PDF
-            const timestamp = new Date().toISOString().split('T')[0];
-            doc.save(`crm-complete-report-${timestamp}.pdf`);
-            
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-            alert('Error generating PDF. The PDF library may not be loaded. Please try using CSV export instead or check your internet connection if working online.');
-        }
+        return html;
     }
 
-    // Helper method to get status label
+    // Export finished projects to printable format
+    exportFinishedProjectsToPDF() {
+        const tasks = storage.getFinishedCustomerTasks();
+        const customers = storage.getCustomers();
+        
+        if (tasks.length === 0) {
+            alert('No finished projects to export');
+            return;
+        }
+
+        const html = this.generateFinishedProjectsHTML(tasks, customers);
+        this.openPrintPreview(html);
+    }
+
+    generateFinishedProjectsHTML(tasks, customers) {
+        const now = new Date();
+        const dateStr = now.toLocaleString();
+        
+        // Create customer lookup
+        const customerMap = {};
+        customers.forEach(c => {
+            customerMap[c.id] = c;
+        });
+
+        // Sort tasks chronologically
+        const sortedTasks = [...tasks].sort((a, b) => {
+            return new Date(b.deadline) - new Date(a.deadline);
+        });
+
+        // Group tasks by customer
+        const tasksByCustomer = {};
+        sortedTasks.forEach(task => {
+            if (!tasksByCustomer[task.customerId]) {
+                tasksByCustomer[task.customerId] = [];
+            }
+            tasksByCustomer[task.customerId].push(task);
+        });
+
+        let html = `
+            <div class="print-document">
+                <div class="print-header">
+                    <h1 class="print-title">Finished Projects Report</h1>
+                    <div class="print-meta">Generated: ${this.escapeHtml(dateStr)} | Total Finished Tasks: ${tasks.length}</div>
+                </div>
+        `;
+
+        // Render grouped tasks
+        Object.keys(tasksByCustomer).forEach((customerId, groupIndex) => {
+            const customer = customerMap[customerId];
+            if (!customer) return;
+
+            const customerTasks = tasksByCustomer[customerId];
+            
+            html += `
+                <div class="print-customer-group">
+                    <div class="print-customer-name">${this.escapeHtml(customer.name)} - ${customerTasks.length} task(s) completed</div>
+            `;
+
+            customerTasks.forEach((task, index) => {
+                html += `
+                    <div class="print-item">
+                        <div class="print-item-title">${this.escapeHtml(task.description)}</div>
+                        <div class="print-item-content">
+                            <div class="print-item-field"><strong>Deadline:</strong> ${this.formatDate(task.deadline)}</div>
+                            <div class="print-item-field"><strong>Responsible:</strong> ${this.escapeHtml(task.responsible)}</div>
+                            <div class="print-item-field"><strong>Priority:</strong> <span class="print-badge print-badge-${task.priority || 'medium'}">${this.getPriorityLabel(task.priority)}</span></div>
+                            <div class="print-item-field"><strong>Status:</strong> <span class="print-badge print-badge-${task.status}">${this.getStatusLabel(task.status)}</span></div>
+                            ${task.notes ? `<div class="print-item-field"><strong>Notes:</strong> ${this.escapeHtml(task.notes)}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+        });
+
+        html += `
+                <div class="print-footer">
+                    CRM Application - Finished Projects Report
+                </div>
+            </div>
+        `;
+
+        return html;
+    }
+
+    // Helper methods
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
     getStatusLabel(status) {
         const statusMap = {
             'pending': 'Pending',
@@ -316,6 +344,31 @@ class PDFManager {
             'completed': 'Completed'
         };
         return statusMap[status] || status;
+    }
+
+    getCustomerStatusLabel(status) {
+        const statusMap = {
+            'onboarding': 'Onboarding',
+            'in-progress': 'In Progress',
+            'finished': 'Finished'
+        };
+        return statusMap[status] || status;
+    }
+
+    getPriorityLabel(priority) {
+        const priorityMap = {
+            'low': 'Low',
+            'medium': 'Medium',
+            'high': 'High'
+        };
+        return priorityMap[priority || 'medium'] || priority;
+    }
+
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }
 

@@ -186,71 +186,7 @@ class FinishedProjectsManager {
     }
 
     exportFinishedProjectsToPDF() {
-        if (typeof pdfManager === 'undefined' || !pdfManager.isAvailable()) {
-            alert('PDF export is not available. The PDF library could not be loaded. This may happen when working offline. Please use CSV export instead.');
-            return;
-        }
-
-        const tasks = storage.getFinishedCustomerTasks();
-        const customers = storage.getCustomers();
-        
-        if (tasks.length === 0) {
-            alert('No finished projects to export');
-            return;
-        }
-
-        try {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // Create customer lookup
-            const customerMap = {};
-            customers.forEach(c => {
-                customerMap[c.id] = c.name;
-            });
-            
-            // Add title
-            doc.setFontSize(20);
-            doc.text('Finished Projects Report', 14, 20);
-            
-            // Add date
-            doc.setFontSize(10);
-            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
-            
-            // Sort tasks chronologically
-            const sortedTasks = [...tasks].sort((a, b) => {
-                return new Date(b.deadline) - new Date(a.deadline);
-            });
-            
-            // Prepare table data
-            const tableData = sortedTasks.map(task => [
-                customerMap[task.customerId] || 'Unknown',
-                task.description,
-                task.deadline,
-                task.responsible,
-                pdfManager.getStatusLabel(task.status)
-            ]);
-            
-            // Add table
-            doc.autoTable({
-                head: [['Customer', 'Description', 'Deadline', 'Responsible', 'Status']],
-                body: tableData,
-                startY: 35,
-                styles: { fontSize: 9 },
-                headStyles: { fillColor: [52, 152, 219] },
-                columnStyles: {
-                    1: { cellWidth: 50 }
-                }
-            });
-            
-            // Save the PDF
-            const timestamp = new Date().toISOString().split('T')[0];
-            doc.save(`finished-projects-report-${timestamp}.pdf`);
-            
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-            alert('Error generating PDF. The PDF library may not be loaded. Please try using CSV export instead or check your internet connection if working online.');
-        }
+        pdfManager.exportFinishedProjectsToPDF();
     }
 }
 
