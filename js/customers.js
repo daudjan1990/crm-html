@@ -240,7 +240,7 @@ class CustomerManager {
         let filteredCustomers = customers;
         if (this.searchTerm) {
             filteredCustomers = customers.filter(customer => {
-                const searchableText = `${customer.name} ${customer.contact} ${customer.companyNumber}`.toLowerCase();
+                const searchableText = `${customer.name || ''} ${customer.contact || ''} ${customer.companyNumber || ''}`.toLowerCase();
                 return searchableText.includes(this.searchTerm);
             });
         }
@@ -393,3 +393,4 @@ class CustomerManager {
 
 // Create global customer manager instance
 const customerManager = new CustomerManager();
+window.customerManager = customerManager;

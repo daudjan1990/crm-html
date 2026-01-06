@@ -269,7 +269,7 @@ class TaskManager {
         // Filter by responsible person
         if (this.searchResponsible) {
             filteredTasks = filteredTasks.filter(task => 
-                task.responsible.toLowerCase().includes(this.searchResponsible)
+                task.responsible && task.responsible.toLowerCase().includes(this.searchResponsible)
             );
         }
         
@@ -410,3 +410,4 @@ class TaskManager {
 
 // Create global task manager instance
 const taskManager = new TaskManager();
+window.taskManager = taskManager;
