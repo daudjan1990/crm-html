@@ -877,11 +877,10 @@ main {
     color: #666;
 }
 
-@media screen {
-    .btn,
-    .action-buttons,
-    .data-item-actions,
-    nav {
-        display: block;
-    }
+.print-overdue {
+    color: #dc2626;
+}
+
+body.print-preview-open {
+    overflow: hidden;
 }

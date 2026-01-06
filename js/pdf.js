@@ -37,7 +37,7 @@ class PDFManager {
         if (this.previewContainer) {
             this.previewContainer.classList.add('active');
             // Prevent body scroll when preview is open
-            document.body.style.overflow = 'hidden';
+            document.body.classList.add('print-preview-open');
         }
     }
 
@@ -45,7 +45,7 @@ class PDFManager {
         if (this.previewContainer) {
             this.previewContainer.classList.remove('active');
             // Restore body scroll
-            document.body.style.overflow = '';
+            document.body.classList.remove('print-preview-open');
         }
     }
 
@@ -193,7 +193,7 @@ class PDFManager {
             html += `
                 <tr class="print-item">
                     <td>${this.escapeHtml(customerName)}</td>
-                    <td><strong>${this.escapeHtml(task.description)}</strong>${isOverdue ? ' <span style="color: #dc2626;">⚠ OVERDUE</span>' : ''}</td>
+                    <td><strong>${this.escapeHtml(task.description)}</strong>${isOverdue ? ' <span class="print-overdue">⚠ OVERDUE</span>' : ''}</td>
                     <td>${this.formatDate(task.deadline)}</td>
                     <td>${this.escapeHtml(task.responsible)}</td>
                     <td><span class="print-badge print-badge-${task.priority || 'medium'}">${this.getPriorityLabel(task.priority)}</span></td>
