@@ -344,6 +344,11 @@ class CustomerManager {
         const container = document.getElementById('contact-persons-container');
         const index = this.contactPersonsCount++;
         
+        const CONTACT_ROLES = ['IT Manager', 'Operation Manager', 'Main Contact'];
+        const roleOptions = CONTACT_ROLES.map(role => 
+            `<option value="${role}" ${person && person.role === role ? 'selected' : ''}>${role}</option>`
+        ).join('');
+        
         const personDiv = document.createElement('div');
         personDiv.className = 'contact-person-item';
         personDiv.innerHTML = `
@@ -360,9 +365,7 @@ class CustomerManager {
                     <label>Role *</label>
                     <select class="contact-person-role" required>
                         <option value="">Select Role</option>
-                        <option value="IT Manager" ${person && person.role === 'IT Manager' ? 'selected' : ''}>IT Manager</option>
-                        <option value="Operation Manager" ${person && person.role === 'Operation Manager' ? 'selected' : ''}>Operation Manager</option>
-                        <option value="Main Contact" ${person && person.role === 'Main Contact' ? 'selected' : ''}>Main Contact</option>
+                        ${roleOptions}
                     </select>
                 </div>
                 <div class="form-group">

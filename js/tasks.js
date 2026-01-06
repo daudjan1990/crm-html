@@ -299,9 +299,10 @@ class TaskManager {
         });
 
         // Sort tasks by priority (high > medium > low) then by deadline
-        const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+        const PRIORITY_ORDER = { 'high': 3, 'medium': 2, 'low': 1 };
+        const DEFAULT_PRIORITY = 2;
         filteredTasks.sort((a, b) => {
-            const priorityDiff = (priorityOrder[b.priority] || 2) - (priorityOrder[a.priority] || 2);
+            const priorityDiff = (PRIORITY_ORDER[b.priority] || DEFAULT_PRIORITY) - (PRIORITY_ORDER[a.priority] || DEFAULT_PRIORITY);
             if (priorityDiff !== 0) return priorityDiff;
             return new Date(a.deadline) - new Date(b.deadline);
         });
