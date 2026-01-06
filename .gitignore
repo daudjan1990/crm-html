@@ -1,0 +1,45 @@
+# Editor and IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts (if any future build process is added)
+dist/
+build/
+.cache/
+
+# Dependencies (if any future package manager is used)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Test coverage (if testing is added)
+coverage/
+.nyc_output/
+
+# Environment variables (for future backend integration)
+.env
+.env.local
+.env.*.local
+
+# Backup files
+*.bak
+backup/
