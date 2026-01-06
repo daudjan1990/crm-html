@@ -99,7 +99,7 @@ class PDFManager {
                     <td>${this.escapeHtml(customer.companyNumber)}</td>
                     <td>${this.escapeHtml(customer.email || '-')}</td>
                     <td>${this.escapeHtml(customer.phone || '-')}</td>
-                    <td><span class="print-badge print-badge-${customer.status}">${this.getCustomerStatusLabel(customer.status)}</span></td>
+                    <td><span class="print-badge print-badge-${customer.status || 'onboarding'}">${this.getCustomerStatusLabel(customer.status)}</span></td>
                 </tr>
             `;
         });
@@ -197,7 +197,7 @@ class PDFManager {
                     <td>${this.formatDate(task.deadline)}</td>
                     <td>${this.escapeHtml(task.responsible)}</td>
                     <td><span class="print-badge print-badge-${task.priority || 'medium'}">${this.getPriorityLabel(task.priority)}</span></td>
-                    <td><span class="print-badge print-badge-${task.status}">${this.getStatusLabel(task.status)}</span></td>
+                    <td><span class="print-badge print-badge-${task.status || 'pending'}">${this.getStatusLabel(task.status)}</span></td>
                 </tr>
             `;
         });
@@ -307,7 +307,7 @@ class PDFManager {
                             <div class="print-item-field"><strong>Deadline:</strong> ${this.formatDate(task.deadline)}</div>
                             <div class="print-item-field"><strong>Responsible:</strong> ${this.escapeHtml(task.responsible)}</div>
                             <div class="print-item-field"><strong>Priority:</strong> <span class="print-badge print-badge-${task.priority || 'medium'}">${this.getPriorityLabel(task.priority)}</span></div>
-                            <div class="print-item-field"><strong>Status:</strong> <span class="print-badge print-badge-${task.status}">${this.getStatusLabel(task.status)}</span></div>
+                            <div class="print-item-field"><strong>Status:</strong> <span class="print-badge print-badge-${task.status || 'pending'}">${this.getStatusLabel(task.status)}</span></div>
                             ${task.notes ? `<div class="print-item-field"><strong>Notes:</strong> ${this.escapeHtml(task.notes)}</div>` : ''}
                         </div>
                     </div>
