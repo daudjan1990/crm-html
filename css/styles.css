@@ -745,13 +745,11 @@ main {
 }
 
 /* Alternating shades for tasks - two distinct shades */
-.print-table tbody tr:nth-child(4n+1),
-.print-table tbody tr:nth-child(4n+2) {
+.print-table tbody tr:nth-child(odd) {
     background-color: #f8f9fa;
 }
 
-.print-table tbody tr:nth-child(4n+3),
-.print-table tbody tr:nth-child(4n+4) {
+.print-table tbody tr:nth-child(even) {
     background-color: #e9ecef;
 }
 
@@ -837,6 +835,16 @@ main {
 
 .print-badge-high {
     background-color: #dc2626;
+    color: #fff;
+}
+
+.print-badge-onboarding {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.print-badge-finished {
+    background-color: #22c55e;
     color: #fff;
 }
 
