@@ -884,3 +884,191 @@ main {
 body.print-preview-open {
     overflow: hidden;
 }
+
+/* PDF Export Selection Modal Styles */
+.pdf-selection-container {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin: 20px 0;
+}
+
+.pdf-selection-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #242d3d 0%, #1e2836 100%);
+    border-radius: 5px;
+    border-left: 3px solid #1e3a8a;
+    transition: all 0.3s ease;
+}
+
+.pdf-selection-item:hover {
+    background: linear-gradient(135deg, #2a3447 0%, #242d3d 100%);
+    border-left-color: #d4af37;
+}
+
+.pdf-selection-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+    cursor: pointer;
+    accent-color: #d4af37;
+}
+
+.pdf-selection-label {
+    flex: 1;
+    cursor: pointer;
+    color: #e4e6eb;
+    font-size: 14px;
+}
+
+.pdf-selection-meta {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-left: 10px;
+}
+
+.pdf-selection-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+/* Flowchart Styles */
+.flowchart-info {
+    background: linear-gradient(135deg, #242d3d 0%, #1e2836 100%);
+    padding: 12px 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border-left: 4px solid #1e3a8a;
+}
+
+.flowchart-info p {
+    color: #9ca3af;
+    margin: 0;
+    font-size: 14px;
+}
+
+.flowchart-canvas {
+    position: relative;
+    min-height: 600px;
+    background: linear-gradient(135deg, #1e2836 0%, #1a2332 100%);
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.flowchart-task {
+    position: absolute;
+    min-width: 180px;
+    max-width: 250px;
+    padding: 15px;
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    border: 2px solid #d4af37;
+    border-radius: 8px;
+    cursor: move;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.flowchart-task:hover {
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    transform: scale(1.02);
+}
+
+.flowchart-task.dragging {
+    opacity: 0.7;
+    cursor: grabbing;
+}
+
+.flowchart-task-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #d4af37;
+    margin-bottom: 8px;
+    word-wrap: break-word;
+}
+
+.flowchart-task-info {
+    font-size: 11px;
+    color: #e4e6eb;
+    line-height: 1.4;
+}
+
+.flowchart-task-info-item {
+    margin-bottom: 3px;
+}
+
+.flowchart-task-status {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-top: 5px;
+}
+
+.flowchart-task-status.pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.flowchart-task-status.in-progress {
+    background-color: #2563eb;
+    color: #fff;
+}
+
+.flowchart-task-status.completed {
+    background-color: #22c55e;
+    color: #fff;
+}
+
+.flowchart-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.flowchart-arrow {
+    stroke: #d4af37;
+    stroke-width: 2;
+    fill: none;
+    marker-end: url(#arrowhead);
+}
+
+.flowchart-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 600px;
+    color: #9ca3af;
+    font-size: 16px;
+    text-align: center;
+}
+
+.flowchart-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+    z-index: 100;
+}
+
+.flowchart-controls button {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+/* Select all/none buttons */
+.pdf-selection-actions button {
+    flex: 1;
+}
+

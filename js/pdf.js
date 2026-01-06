@@ -3,7 +3,11 @@
 class PDFManager {
     constructor() {
         this.previewContainer = null;
+        this.selectionModal = null;
+        this.currentExportType = null;
+        this.currentExportData = null;
         this.setupPrintPreviewContainer();
+        this.setupSelectionModal();
     }
 
     setupPrintPreviewContainer() {
@@ -26,6 +30,177 @@ class PDFManager {
             this.previewContainer = container;
         }
     }
+
+    setupSelectionModal() {
+        // Get the selection modal
+        this.selectionModal = document.getElementById('pdf-export-modal');
+        if (!this.selectionModal) return;
+
+        // Setup close button
+        const closeBtn = this.selectionModal.querySelector('.close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.closeSelectionModal());
+        }
+
+        // Setup cancel button
+        const cancelBtn = this.selectionModal.querySelector('.pdf-cancel-btn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => this.closeSelectionModal());
+        }
+
+        // Setup confirm button
+        const confirmBtn = document.getElementById('pdf-export-confirm-btn');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => this.confirmExport());
+        }
+
+        // Click outside modal to close
+        window.addEventListener('click', (e) => {
+            if (e.target === this.selectionModal) {
+                this.closeSelectionModal();
+            }
+        });
+    }
+
+    openSelectionModal(type, data) {
+        this.currentExportType = type;
+        this.currentExportData = data;
+        
+        const title = document.getElementById('pdf-export-modal-title');
+        const container = document.getElementById('pdf-export-selection-container');
+        
+        if (!title || !container) return;
+
+        // Set title based on type
+        if (type === 'tasks') {
+            title.textContent = 'Select Tasks to Export';
+        } else if (type === 'customers') {
+            title.textContent = 'Select Customers to Export';
+        } else if (type === 'finished') {
+            title.textContent = 'Select Finished Projects to Export';
+        }
+
+        // Build selection UI
+        container.innerHTML = this.buildSelectionUI(type, data);
+
+        // Add select all/none buttons
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'pdf-selection-actions';
+        actionsDiv.innerHTML = `
+            <button class="btn btn-secondary" onclick="pdfManager.selectAll()">Select All</button>
+            <button class="btn btn-secondary" onclick="pdfManager.selectNone()">Select None</button>
+        `;
+        container.insertBefore(actionsDiv, container.firstChild);
+
+        this.selectionModal.classList.add('active');
+    }
+
+    buildSelectionUI(type, data) {
+        if (type === 'tasks') {
+            return data.map(task => {
+                const customer = storage.getCustomerById(task.customerId);
+                const customerName = customer ? customer.name : 'Unknown';
+                return `
+                    <div class="pdf-selection-item">
+                        <input type="checkbox" id="export-${task.id}" value="${task.id}" checked>
+                        <label class="pdf-selection-label" for="export-${task.id}">
+                            <strong>${this.escapeHtml(task.description)}</strong>
+                            <span class="pdf-selection-meta">${this.escapeHtml(customerName)} - ${this.formatDate(task.deadline)}</span>
+                        </label>
+                    </div>
+                `;
+            }).join('');
+        } else if (type === 'customers') {
+            return data.map(customer => {
+                const taskCount = storage.getTasksByCustomer(customer.id).length;
+                return `
+                    <div class="pdf-selection-item">
+                        <input type="checkbox" id="export-${customer.id}" value="${customer.id}" checked>
+                        <label class="pdf-selection-label" for="export-${customer.id}">
+                            <strong>${this.escapeHtml(customer.name)}</strong>
+                            <span class="pdf-selection-meta">${customer.companyNumber} - ${taskCount} task(s)</span>
+                        </label>
+                    </div>
+                `;
+            }).join('');
+        } else if (type === 'finished') {
+            // Group tasks by customer for finished projects
+            const tasksByCustomer = {};
+            data.forEach(task => {
+                if (!tasksByCustomer[task.customerId]) {
+                    tasksByCustomer[task.customerId] = [];
+                }
+                tasksByCustomer[task.customerId].push(task);
+            });
+
+            return Object.keys(tasksByCustomer).map(customerId => {
+                const customer = storage.getCustomerById(customerId);
+                const tasks = tasksByCustomer[customerId];
+                const customerName = customer ? customer.name : 'Unknown';
+                return `
+                    <div class="pdf-selection-item">
+                        <input type="checkbox" id="export-${customerId}" value="${customerId}" checked>
+                        <label class="pdf-selection-label" for="export-${customerId}">
+                            <strong>${this.escapeHtml(customerName)}</strong>
+                            <span class="pdf-selection-meta">${tasks.length} completed task(s)</span>
+                        </label>
+                    </div>
+                `;
+            }).join('');
+        }
+        return '';
+    }
+
+    selectAll() {
+        const checkboxes = document.querySelectorAll('#pdf-export-selection-container input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = true);
+    }
+
+    selectNone() {
+        const checkboxes = document.querySelectorAll('#pdf-export-selection-container input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    }
+
+    closeSelectionModal() {
+        if (this.selectionModal) {
+            this.selectionModal.classList.remove('active');
+        }
+        this.currentExportType = null;
+        this.currentExportData = null;
+    }
+
+    confirmExport() {
+        // Get selected IDs
+        const checkboxes = document.querySelectorAll('#pdf-export-selection-container input[type="checkbox"]:checked');
+        const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+
+        if (selectedIds.length === 0) {
+            alert('Please select at least one item to export');
+            return;
+        }
+
+        // Filter data based on selection
+        let filteredData;
+        if (this.currentExportType === 'tasks') {
+            filteredData = this.currentExportData.filter(task => selectedIds.includes(task.id));
+            const customers = storage.getCustomers();
+            const html = this.generateTasksHTML(filteredData, customers);
+            this.openPrintPreview(html);
+        } else if (this.currentExportType === 'customers') {
+            filteredData = this.currentExportData.filter(customer => selectedIds.includes(customer.id));
+            const html = this.generateCustomersHTML(filteredData);
+            this.openPrintPreview(html);
+        } else if (this.currentExportType === 'finished') {
+            // Filter tasks by selected customer IDs
+            filteredData = this.currentExportData.filter(task => selectedIds.includes(task.customerId));
+            const customers = storage.getCustomers();
+            const html = this.generateFinishedProjectsHTML(filteredData, customers);
+            this.openPrintPreview(html);
+        }
+
+        this.closeSelectionModal();
+    }
+
 
     openPrintPreview(htmlContent) {
         const contentDiv = document.getElementById('print-preview-content');
@@ -62,9 +237,10 @@ class PDFManager {
             return;
         }
 
-        const html = this.generateCustomersHTML(customers);
-        this.openPrintPreview(html);
+        // Open selection modal
+        this.openSelectionModal('customers', customers);
     }
+
 
     generateCustomersHTML(customers) {
         const now = new Date();
@@ -152,9 +328,10 @@ class PDFManager {
             return;
         }
 
-        const html = this.generateTasksHTML(tasks, customers);
-        this.openPrintPreview(html);
+        // Open selection modal
+        this.openSelectionModal('tasks', tasks);
     }
+
 
     generateTasksHTML(tasks, customers) {
         const now = new Date();
@@ -254,9 +431,10 @@ class PDFManager {
             return;
         }
 
-        const html = this.generateFinishedProjectsHTML(tasks, customers);
-        this.openPrintPreview(html);
+        // Open selection modal
+        this.openSelectionModal('finished', tasks);
     }
+
 
     generateFinishedProjectsHTML(tasks, customers) {
         const now = new Date();

@@ -51,6 +51,11 @@ class CRMApp {
         if (activeTab) {
             activeTab.classList.add('active');
             this.currentTab = tabName;
+
+            // Re-render flowchart when switching to flowchart tab
+            if (tabName === 'flowchart' && window.flowchartManager) {
+                window.flowchartManager.renderFlowchart();
+            }
         }
     }
 
