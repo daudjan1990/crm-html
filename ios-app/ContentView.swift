@@ -10,6 +10,7 @@ import WebKit
 
 struct ContentView: View {
     @StateObject private var webViewStore = WebViewStore()
+    @StateObject private var navigationDelegate = NavigationDelegate()
     
     var body: some View {
         ZStack {
@@ -21,6 +22,9 @@ struct ContentView: View {
                     .scaleEffect(1.5)
                     .progressViewStyle(CircularProgressViewStyle(tint: .green))
             }
+        }
+        .onAppear {
+            webViewStore.webView.navigationDelegate = navigationDelegate
         }
     }
 }
@@ -48,9 +52,6 @@ class WebViewStore: ObservableObject {
         
         webView = WKWebView(frame: .zero, configuration: configuration)
         
-        // Set navigation delegate
-        webView.navigationDelegate = NavigationDelegate.shared
-        
         // Load the local index.html file
         loadLocalHTML()
     }
@@ -67,8 +68,6 @@ class WebViewStore: ObservableObject {
 }
 
 class NavigationDelegate: NSObject, WKNavigationDelegate, ObservableObject {
-    static let shared = NavigationDelegate()
-    
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         // Page finished loading - loading indicator will be hidden by the view
         print("WebView finished loading")
