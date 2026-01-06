@@ -881,6 +881,66 @@ main {
     color: #dc2626;
 }
 
+/* Print Flowchart Styles */
+.print-flowchart-canvas {
+    position: relative;
+    min-height: 600px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin: 20px 0;
+    padding: 20px;
+}
+
+.print-flowchart-task {
+    position: absolute;
+    min-width: 180px;
+    max-width: 250px;
+    padding: 12px;
+    background: white;
+    border: 2px solid #1e3a8a;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.print-flowchart-task-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: #1e3a8a;
+    margin-bottom: 6px;
+    word-wrap: break-word;
+}
+
+.print-flowchart-task-info {
+    font-size: 10px;
+    color: #333;
+    line-height: 1.4;
+}
+
+.print-flowchart-task-info div {
+    margin-bottom: 2px;
+}
+
+.print-flowchart-task-status {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+.print-flowchart-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
 body.print-preview-open {
     overflow: hidden;
 }
@@ -971,6 +1031,33 @@ body.print-preview-open {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     transition: all 0.3s ease;
     z-index: 10;
+    position: relative;
+}
+
+.flowchart-task-delete {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    background-color: rgba(239, 68, 68, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 20;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flowchart-task-delete:hover {
+    background-color: rgba(239, 68, 68, 1);
+    transform: scale(1.1);
 }
 
 .flowchart-task:hover {
