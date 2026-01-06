@@ -44,12 +44,18 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('activate', (event) => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter(cacheName => !cacheWhitelist.includes(cacheName))
-          .map(cacheName => caches.delete(cacheName))
-      );
-    })
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter(cacheName => !cacheWhitelist.includes(cacheName))
+            .map(cacheName => caches.delete(cacheName).catch(err => {
+              console.error('Failed to delete cache:', cacheName, err);
+            }))
+        );
+      })
+      .catch(err => {
+        console.error('Cache activation failed:', err);
+      })
   );
 });

@@ -208,6 +208,14 @@ npx cap open ios
                         if (!registration) {
                             registerServiceWorker();
                         }
+                    })
+                    .catch(error => {
+                        console.error('Service worker registration check failed:', error);
+                        const status = document.getElementById('sw-status');
+                        if (status) {
+                            status.className = 'status error';
+                            status.textContent = '❌ Error checking service worker: ' + error.message;
+                        }
                     });
             }
         });

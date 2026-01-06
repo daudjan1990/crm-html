@@ -24,6 +24,7 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            navigationDelegate.webViewStore = webViewStore
             webViewStore.webView.navigationDelegate = navigationDelegate
         }
     }
@@ -63,22 +64,34 @@ class WebViewStore: ObservableObject {
             webView.loadFileURL(htmlURL, allowingReadAccessTo: htmlDirectory)
         } else {
             print("Error: index.html not found in app bundle")
+            isLoading = false
+        }
+    }
+    
+    func setLoading(_ loading: Bool) {
+        DispatchQueue.main.async {
+            self.isLoading = loading
         }
     }
 }
 
 class NavigationDelegate: NSObject, WKNavigationDelegate, ObservableObject {
+    weak var webViewStore: WebViewStore?
+    
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        // Page finished loading - loading indicator will be hidden by the view
+        // Page finished loading
+        webViewStore?.setLoading(false)
         print("WebView finished loading")
     }
     
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        webViewStore?.setLoading(false)
         print("WebView navigation failed: \(error.localizedDescription)")
     }
     
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        // Show loading indicator
+        // Navigation started
+        webViewStore?.setLoading(true)
     }
 }
 
