@@ -591,9 +591,6 @@ class KanbanManager {
         this.closeAddTasksModal();
         this.renderKanban();
     }
-            this.renderKanban();
-        }
-    }
 
     resetBoard() {
         if (confirm('Are you sure you want to reset the board? This will restore default columns and clear all task assignments.')) {
