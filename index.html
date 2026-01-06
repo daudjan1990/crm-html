@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Application</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CRM Application</h1>
+            <nav>
+                <button class="tab-button active" data-tab="customers">Customers</button>
+                <button class="tab-button" data-tab="tasks">Tasks</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Customers Tab -->
+            <section id="customers-tab" class="tab-content active">
+                <div class="section-header">
+                    <h2>Customer Management</h2>
+                    <div class="action-buttons">
+                        <button id="add-customer-btn" class="btn btn-primary">Add Customer</button>
+                        <button id="import-customers-btn" class="btn btn-secondary">Import CSV</button>
+                        <button id="export-customers-btn" class="btn btn-secondary">Export CSV</button>
+                        <button id="export-customers-pdf-btn" class="btn btn-secondary">Export PDF</button>
+                    </div>
+                </div>
+                <div id="customers-list" class="data-list"></div>
+            </section>
+
+            <!-- Tasks Tab -->
+            <section id="tasks-tab" class="tab-content">
+                <div class="section-header">
+                    <h2>Task Management</h2>
+                    <div class="action-buttons">
+                        <button id="add-task-btn" class="btn btn-primary">Add Task</button>
+                        <button id="import-tasks-btn" class="btn btn-secondary">Import CSV</button>
+                        <button id="export-tasks-btn" class="btn btn-secondary">Export CSV</button>
+                        <button id="export-tasks-pdf-btn" class="btn btn-secondary">Export PDF</button>
+                    </div>
+                </div>
+                <div id="tasks-list" class="data-list"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Customer Modal -->
+    <div id="customer-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="customer-modal-title">Add Customer</h2>
+            <form id="customer-form">
+                <div class="form-group">
+                    <label for="customer-name">Name *</label>
+                    <input type="text" id="customer-name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-contact">Ansprechpartner (Contact Person) *</label>
+                    <input type="text" id="customer-contact" name="contact" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-company-number">Betriebenummer (Company Number) *</label>
+                    <input type="text" id="customer-company-number" name="companyNumber" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-email">Email</label>
+                    <input type="email" id="customer-email" name="email">
+                </div>
+                <div class="form-group">
+                    <label for="customer-phone">Phone</label>
+                    <input type="tel" id="customer-phone" name="phone">
+                </div>
+                <div class="form-group">
+                    <label for="customer-address">Address</label>
+                    <textarea id="customer-address" name="address" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="task-modal-title">Add Task</h2>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="task-customer">Customer *</label>
+                    <select id="task-customer" name="customerId" required>
+                        <option value="">Select Customer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="task-description">Description *</label>
+                    <input type="text" id="task-description" name="description" required>
+                </div>
+                <div class="form-group">
+                    <label for="task-notes">Notes</label>
+                    <textarea id="task-notes" name="notes" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="task-deadline">Deadline *</label>
+                    <input type="date" id="task-deadline" name="deadline" required>
+                </div>
+                <div class="form-group">
+                    <label for="task-responsible">Responsible Person *</label>
+                    <input type="text" id="task-responsible" name="responsible" required>
+                </div>
+                <div class="form-group">
+                    <label for="task-status">Status</label>
+                    <select id="task-status" name="status">
+                        <option value="pending">Pending</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hidden file inputs for CSV import -->
+    <input type="file" id="customer-csv-input" accept=".csv" style="display: none;">
+    <input type="file" id="task-csv-input" accept=".csv" style="display: none;">
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Application Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/csv.js"></script>
+    <script src="js/pdf.js"></script>
+    <script src="js/customers.js"></script>
+    <script src="js/tasks.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
