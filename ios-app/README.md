@@ -90,6 +90,11 @@ Replace your project's Info.plist with the provided one, or add these keys:
    - Drag and drop into appropriate size slots
    - Required sizes: 20pt, 29pt, 40pt, 60pt, 76pt, 83.5pt (in 1x, 2x, 3x)
 
+**Note**: The provided Info.plist uses a default launch screen. For a custom launch screen:
+1. Create a Launch Screen asset in Assets.xcassets
+2. Or add a LaunchScreen.storyboard to your project
+3. Xcode will automatically configure these for modern iOS apps
+
 ### 6. Build and Run
 
 1. Select your target device or simulator
