@@ -131,6 +131,7 @@ class CustomerManager {
         document.getElementById('customer-email').value = customer.email || '';
         document.getElementById('customer-phone').value = customer.phone || '';
         document.getElementById('customer-address').value = customer.address || '';
+        document.getElementById('customer-status').value = customer.status || 'onboarding';
         
         // Populate contact persons
         const container = document.getElementById('contact-persons-container');
@@ -162,11 +163,12 @@ class CustomerManager {
             email: formData.get('email').trim(),
             phone: formData.get('phone').trim(),
             address: formData.get('address').trim(),
+            status: formData.get('status') || 'onboarding',
             contactPersons: []
         };
 
         // Validate required fields
-        if (!customer.name || !customer.contact || !customer.companyNumber) {
+        if (!customer.name || !customer.contact || !customer.companyNumber || !customer.status) {
             alert('Please fill in all required fields');
             return;
         }
@@ -204,6 +206,14 @@ class CustomerManager {
         if (result) {
             this.closeModal();
             this.renderCustomers();
+            
+            // Update task displays when customer status changes
+            if (window.taskManager) {
+                window.taskManager.renderTasks();
+            }
+            if (window.finishedProjectsManager) {
+                window.finishedProjectsManager.renderFinishedProjects();
+            }
         }
     }
 
@@ -269,6 +279,8 @@ class CustomerManager {
 
         container.innerHTML = filteredCustomers.map(customer => {
             const tasks = storage.getTasksByCustomer(customer.id);
+            const statusLabel = this.getStatusLabel(customer.status || 'onboarding');
+            const statusClass = customer.status ? customer.status.toLowerCase() : 'onboarding';
             let contactPersonsHtml = '';
             if (customer.contactPersons && customer.contactPersons.length > 0) {
                 contactPersonsHtml = `
@@ -326,6 +338,12 @@ class CustomerManager {
                         <div class="data-field">
                             <div class="data-field-label">Tasks</div>
                             <div class="data-field-value">${tasks.length} task(s)</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-field-label">Status</div>
+                            <div class="data-field-value">
+                                <span class="status-badge customer-status-${statusClass}">${this.escapeHtml(statusLabel)}</span>
+                            </div>
                         </div>
                         ${contactPersonsHtml}
                     </div>
@@ -391,6 +409,15 @@ class CustomerManager {
         if (window.taskManager) {
             window.taskManager.filterByCustomer(customerId);
         }
+    }
+
+    getStatusLabel(status) {
+        const statusMap = {
+            'onboarding': 'Onboarding',
+            'in-progress': 'In Progress',
+            'finished': 'Finished'
+        };
+        return statusMap[status] || status;
     }
 }
 

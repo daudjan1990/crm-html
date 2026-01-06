@@ -252,7 +252,7 @@ class TaskManager {
     }
 
     renderTasks() {
-        const tasks = storage.getTasks();
+        const tasks = storage.getActiveCustomerTasks(); // Only get tasks for non-finished customers
         const customers = storage.getCustomers();
         const container = document.getElementById('tasks-list');
         

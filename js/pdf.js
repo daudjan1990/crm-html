@@ -2,14 +2,32 @@
 
 class PDFManager {
     constructor() {
-        // Wait for jsPDF to load
+        // Check if jsPDF is available
+        this.isLibraryLoaded = false;
         this.checkLibraryLoaded();
     }
 
     checkLibraryLoaded() {
-        if (typeof window.jspdf === 'undefined') {
-            console.warn('jsPDF library not loaded yet');
-        }
+        // Check periodically if jsPDF has loaded
+        const checkInterval = setInterval(() => {
+            if (typeof window.jspdf !== 'undefined') {
+                this.isLibraryLoaded = true;
+                clearInterval(checkInterval);
+                console.log('jsPDF library loaded successfully');
+            }
+        }, 100);
+
+        // Stop checking after 5 seconds
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            if (!this.isLibraryLoaded) {
+                console.warn('jsPDF library not loaded - PDF export will not be available offline');
+            }
+        }, 5000);
+    }
+
+    isAvailable() {
+        return this.isLibraryLoaded && typeof window.jspdf !== 'undefined';
     }
 
     // Export customers to PDF
@@ -18,6 +36,11 @@ class PDFManager {
         
         if (customers.length === 0) {
             alert('No customers to export');
+            return;
+        }
+
+        if (!this.isAvailable()) {
+            alert('PDF export is not available. The PDF library could not be loaded. This may happen when working offline. Please use CSV export instead.');
             return;
         }
 
@@ -85,7 +108,7 @@ class PDFManager {
             
         } catch (error) {
             console.error('Error generating PDF:', error);
-            alert('Error generating PDF. Please ensure the PDF library is loaded.');
+            alert('Error generating PDF. The PDF library may not be loaded. Please try using CSV export instead or check your internet connection if working online.');
         }
     }
 
@@ -96,6 +119,11 @@ class PDFManager {
         
         if (tasks.length === 0) {
             alert('No tasks to export');
+            return;
+        }
+
+        if (!this.isAvailable()) {
+            alert('PDF export is not available. The PDF library could not be loaded. This may happen when working offline. Please use CSV export instead.');
             return;
         }
 
@@ -174,7 +202,7 @@ class PDFManager {
             
         } catch (error) {
             console.error('Error generating PDF:', error);
-            alert('Error generating PDF. Please ensure the PDF library is loaded.');
+            alert('Error generating PDF. The PDF library may not be loaded. Please try using CSV export instead or check your internet connection if working online.');
         }
     }
 
@@ -185,6 +213,11 @@ class PDFManager {
         
         if (customers.length === 0 && tasks.length === 0) {
             alert('No data to export');
+            return;
+        }
+
+        if (!this.isAvailable()) {
+            alert('PDF export is not available. The PDF library could not be loaded. This may happen when working offline. Please use CSV export instead.');
             return;
         }
 
@@ -271,7 +304,7 @@ class PDFManager {
             
         } catch (error) {
             console.error('Error generating PDF:', error);
-            alert('Error generating PDF. Please ensure the PDF library is loaded.');
+            alert('Error generating PDF. The PDF library may not be loaded. Please try using CSV export instead or check your internet connection if working online.');
         }
     }
 

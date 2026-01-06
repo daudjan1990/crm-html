@@ -44,6 +44,10 @@ class StorageManager {
         const customers = this.getCustomers();
         customer.id = this.generateId();
         customer.createdAt = new Date().toISOString();
+        // Set default status if not provided
+        if (!customer.status) {
+            customer.status = 'onboarding';
+        }
         customers.push(customer);
         return this.saveCustomers(customers) ? customer : null;
     }
@@ -125,6 +129,26 @@ class StorageManager {
 
     getTasksByCustomer(customerId) {
         return this.getTasks().filter(t => t.customerId === customerId);
+    }
+
+    // Get tasks for non-finished customers only
+    getActiveCustomerTasks() {
+        const tasks = this.getTasks();
+        const customers = this.getCustomers();
+        const finishedCustomerIds = new Set(
+            customers.filter(c => c.status === 'finished').map(c => c.id)
+        );
+        return tasks.filter(t => !finishedCustomerIds.has(t.customerId));
+    }
+
+    // Get tasks for finished customers only
+    getFinishedCustomerTasks() {
+        const tasks = this.getTasks();
+        const customers = this.getCustomers();
+        const finishedCustomerIds = new Set(
+            customers.filter(c => c.status === 'finished').map(c => c.id)
+        );
+        return tasks.filter(t => finishedCustomerIds.has(t.customerId));
     }
 
     // Utility functions
