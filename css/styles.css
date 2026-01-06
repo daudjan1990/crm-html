@@ -744,7 +744,7 @@ main {
     vertical-align: top;
 }
 
-/* Alternating shades for tasks - two distinct shades */
+/* Alternating shades for rows - two distinct shades */
 .print-table tbody tr:nth-child(odd) {
     background-color: #f8f9fa;
 }
