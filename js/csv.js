@@ -79,7 +79,7 @@ class CSVManager {
             rows.push(escapedRow);
         });
 
-        return rows.map(row => row.join(','')).join('\n');
+        return rows.map(row => row.join(',')).join('\n');
     }
 
     // Download CSV file
