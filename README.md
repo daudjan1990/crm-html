@@ -352,7 +352,54 @@ Potential features for future versions:
 - [ ] Activity logging
 - [ ] Data encryption
 - [ ] Offline support with sync
-- [ ] Mobile app (PWA)
+- [x] Mobile app (PWA) - ✅ **Completed**
+- [x] iOS app - ✅ **Completed**
+
+## iOS App
+
+The CRM application is now available as a native iOS app! We provide two methods to create an iOS app:
+
+### Method 1: Capacitor (Recommended - Easiest)
+
+Use Capacitor to quickly convert the web app into a native iOS app:
+
+```bash
+# Install dependencies
+npm install
+
+# Add iOS platform
+npx cap add ios
+
+# Open in Xcode
+npx cap open ios
+```
+
+**See [CAPACITOR_GUIDE.md](CAPACITOR_GUIDE.md) for detailed instructions.**
+
+### Method 2: Custom Swift/WKWebView Wrapper
+
+Build a custom iOS app using SwiftUI and WKWebView:
+
+1. Create a new iOS project in Xcode
+2. Use the provided Swift files from `ios-app/` directory
+3. Bundle the web resources with the app
+
+**See [ios-app/README.md](ios-app/README.md) for detailed instructions.**
+
+### Progressive Web App (PWA)
+
+The app also works as a PWA and can be installed directly from Safari:
+
+1. Open the app in Safari on iOS
+2. Tap the Share button
+3. Tap "Add to Home Screen"
+4. The app will install with an icon on your home screen
+
+Features:
+- ✅ Offline support via Service Worker
+- ✅ App manifest for installation
+- ✅ Full-screen mode
+- ✅ iOS-optimized icons and splash screens
 
 ---
 
