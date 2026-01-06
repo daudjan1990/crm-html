@@ -86,6 +86,10 @@
                 <div class="flowchart-info">
                     <p>Drag tasks to arrange them. Click "Add Dependency" to connect tasks and show which tasks must be completed first.</p>
                 </div>
+                <div class="search-container">
+                    <input type="text" id="flowchart-filter-company" placeholder="Filter by company name..." class="search-input">
+                    <button id="flowchart-clear-filter" class="btn btn-secondary">Clear Filter</button>
+                </div>
                 <div id="flowchart-canvas" class="flowchart-canvas">
                     <!-- Task boxes and dependencies will be rendered here -->
                 </div>
@@ -96,6 +100,7 @@
                 <div class="section-header">
                     <h2>Kanban Board</h2>
                     <div class="action-buttons">
+                        <button id="kanban-add-tasks-btn" class="btn btn-primary">+ Add Tasks</button>
                         <button id="kanban-add-column-btn" class="btn btn-primary">Add Column</button>
                         <button id="kanban-reset-btn" class="btn btn-secondary">Reset Board</button>
                         <button id="export-kanban-pdf-btn" class="btn btn-secondary">Export PDF</button>
@@ -283,6 +288,26 @@
                     <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Kanban Add Tasks Modal -->
+    <div id="kanban-add-tasks-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add Tasks to Kanban</h2>
+            <div class="search-container">
+                <input type="text" id="kanban-task-filter-company" placeholder="Filter by company name..." class="search-input">
+                <input type="text" id="kanban-task-filter-company-number" placeholder="Filter by company number..." class="search-input">
+                <button id="kanban-task-clear-filter" class="btn btn-secondary">Clear Filters</button>
+            </div>
+            <div id="kanban-tasks-selection-container" class="pdf-selection-container">
+                <!-- Task checkboxes will be dynamically populated here -->
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-primary" id="kanban-add-tasks-confirm-btn">Add Selected Tasks</button>
+                <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+            </div>
         </div>
     </div>
 

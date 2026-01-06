@@ -8,6 +8,7 @@ class FlowchartManager {
         this.taskPositions = {};
         this.draggedTask = null;
         this.dragOffset = { x: 0, y: 0 };
+        this.filterCompany = '';
         this.initialize();
     }
 
@@ -46,6 +47,24 @@ class FlowchartManager {
         const exportPdfBtn = document.getElementById('export-flowchart-pdf-btn');
         if (exportPdfBtn) {
             exportPdfBtn.addEventListener('click', () => this.exportFlowchartToPDF());
+        }
+
+        // Filter functionality
+        const filterInput = document.getElementById('flowchart-filter-company');
+        if (filterInput) {
+            filterInput.addEventListener('input', (e) => {
+                this.filterCompany = e.target.value.toLowerCase();
+                this.renderFlowchart();
+            });
+        }
+
+        const clearFilterBtn = document.getElementById('flowchart-clear-filter');
+        if (clearFilterBtn) {
+            clearFilterBtn.addEventListener('click', () => {
+                this.filterCompany = '';
+                if (filterInput) filterInput.value = '';
+                this.renderFlowchart();
+            });
         }
 
         // Dependency modal setup
@@ -120,26 +139,37 @@ class FlowchartManager {
     renderFlowchart() {
         if (!this.canvas) return;
 
-        const tasks = storage.getActiveCustomerTasks();
+        let tasks = storage.getActiveCustomerTasks();
         const customers = storage.getCustomers();
-
-        if (tasks.length === 0) {
-            this.canvas.innerHTML = `
-                <div class="flowchart-empty">
-                    <div>
-                        <div style="font-size: 48px; margin-bottom: 15px;">📊</div>
-                        <div>No tasks available. Add tasks in the Tasks tab to create a flowchart.</div>
-                    </div>
-                </div>
-            `;
-            return;
-        }
 
         // Create customer lookup
         const customerMap = {};
         customers.forEach(c => {
             customerMap[c.id] = c.name;
         });
+
+        // Apply filter if set
+        if (this.filterCompany) {
+            tasks = tasks.filter(task => {
+                const customerName = customerMap[task.customerId] || '';
+                return customerName.toLowerCase().includes(this.filterCompany);
+            });
+        }
+
+        if (tasks.length === 0) {
+            const message = this.filterCompany 
+                ? 'No tasks found matching your filter.' 
+                : 'No tasks available. Add tasks in the Tasks tab to create a flowchart.';
+            this.canvas.innerHTML = `
+                <div class="flowchart-empty">
+                    <div>
+                        <div style="font-size: 48px; margin-bottom: 15px;">📊</div>
+                        <div>${message}</div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
 
         // Clear canvas
         this.canvas.innerHTML = '';
@@ -190,6 +220,7 @@ class FlowchartManager {
         // Task content
         const statusClass = task.status || 'pending';
         box.innerHTML = `
+            <button class="flowchart-task-delete" title="Remove from flowchart">×</button>
             <div class="flowchart-task-title">${this.escapeHtml(task.description)}</div>
             <div class="flowchart-task-info">
                 <div class="flowchart-task-info-item"><strong>Customer:</strong> ${this.escapeHtml(customerName)}</div>
@@ -199,8 +230,23 @@ class FlowchartManager {
             <div class="flowchart-task-status ${statusClass}">${this.getStatusLabel(task.status)}</div>
         `;
 
+        // Add delete button event listener
+        const deleteBtn = box.querySelector('.flowchart-task-delete');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.removeTaskFromFlowchart(task.id);
+            });
+        }
+
         // Make draggable
-        box.addEventListener('mousedown', (e) => this.startDrag(e, box, task.id));
+        box.addEventListener('mousedown', (e) => {
+            // Don't start drag if clicking on delete button
+            if (e.target.classList.contains('flowchart-task-delete')) {
+                return;
+            }
+            this.startDrag(e, box, task.id);
+        });
 
         return box;
     }
@@ -428,6 +474,21 @@ class FlowchartManager {
         }
     }
 
+    removeTaskFromFlowchart(taskId) {
+        if (confirm('Remove this task from the flowchart? This will also remove any dependencies involving this task.')) {
+            // Remove position
+            delete this.taskPositions[taskId];
+            
+            // Remove dependencies involving this task
+            this.dependencies = this.dependencies.filter(dep => 
+                dep.from !== taskId && dep.to !== taskId
+            );
+            
+            this.saveFlowchartData();
+            this.renderFlowchart();
+        }
+    }
+
     exportFlowchartToPDF() {
         const tasks = storage.getActiveCustomerTasks();
         const customers = storage.getCustomers();
@@ -457,12 +518,104 @@ class FlowchartManager {
             taskMap[t.id] = t;
         });
 
+        // Apply filter if needed
+        let filteredTasks = tasks;
+        if (this.filterCompany) {
+            filteredTasks = tasks.filter(task => {
+                const customerName = customerMap[task.customerId] || '';
+                return customerName.toLowerCase().includes(this.filterCompany);
+            });
+        }
+
+        // Get only dependencies for filtered tasks
+        const taskIds = new Set(filteredTasks.map(t => t.id));
+        const filteredDependencies = this.dependencies.filter(dep => 
+            taskIds.has(dep.from) && taskIds.has(dep.to)
+        );
+
         let html = `
             <div class="print-document">
                 <div class="print-header">
                     <h1 class="print-title">Task Flowchart</h1>
-                    <div class="print-meta">Generated: ${this.escapeHtml(dateStr)} | Total Tasks: ${tasks.length} | Dependencies: ${this.dependencies.length}</div>
+                    <div class="print-meta">Generated: ${this.escapeHtml(dateStr)} | Total Tasks: ${filteredTasks.length} | Dependencies: ${filteredDependencies.length}</div>
                 </div>
+        `;
+
+        // Visual flowchart representation
+        html += `
+            <div class="print-section">
+                <h2 class="print-section-title">Visual Flowchart</h2>
+                <div class="print-flowchart-canvas">
+        `;
+
+        // Render tasks as positioned boxes
+        filteredTasks.forEach((task, index) => {
+            const customerName = customerMap[task.customerId] || 'Unknown';
+            const priority = task.priority || 'medium';
+            const status = task.status || 'pending';
+            const position = this.taskPositions[task.id] || {
+                x: 50 + (index % 4) * 220,
+                y: 50 + Math.floor(index / 4) * 140
+            };
+
+            html += `
+                <div class="print-flowchart-task" style="left: ${position.x}px; top: ${position.y}px;">
+                    <div class="print-flowchart-task-title">${this.escapeHtml(task.description)}</div>
+                    <div class="print-flowchart-task-info">
+                        <div><strong>Customer:</strong> ${this.escapeHtml(customerName)}</div>
+                        <div><strong>Due:</strong> ${this.formatDate(task.deadline)}</div>
+                        <div><strong>Responsible:</strong> ${this.escapeHtml(task.responsible)}</div>
+                    </div>
+                    <div class="print-flowchart-task-status print-badge-${status}">${this.getStatusLabel(status)}</div>
+                </div>
+            `;
+        });
+
+        // Render arrows using SVG
+        if (filteredDependencies.length > 0) {
+            html += `<svg class="print-flowchart-svg">`;
+            
+            filteredDependencies.forEach(dep => {
+                const fromTask = taskMap[dep.from];
+                const toTask = taskMap[dep.to];
+                
+                if (fromTask && toTask) {
+                    const fromPos = this.taskPositions[dep.from] || { x: 50, y: 50 };
+                    const toPos = this.taskPositions[dep.to] || { x: 50, y: 50 };
+                    
+                    // Calculate center points
+                    const fromX = fromPos.x + 100;
+                    const fromY = fromPos.y + 60;
+                    const toX = toPos.x + 100;
+                    const toY = toPos.y + 60;
+                    
+                    // Calculate angle for edge points
+                    const angle = Math.atan2(toY - fromY, toX - fromX);
+                    const fromEdgeX = fromX + Math.cos(angle) * 100;
+                    const fromEdgeY = fromY + Math.sin(angle) * 60;
+                    const toEdgeX = toX - Math.cos(angle) * 100;
+                    const toEdgeY = toY - Math.sin(angle) * 60;
+                    
+                    html += `
+                        <defs>
+                            <marker id="print-arrowhead-${dep.from}-${dep.to}" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#d4af37" />
+                            </marker>
+                        </defs>
+                        <path d="M ${fromEdgeX} ${fromEdgeY} L ${toEdgeX} ${toEdgeY}" 
+                              stroke="#d4af37" stroke-width="2" 
+                              marker-end="url(#print-arrowhead-${dep.from}-${dep.to})" 
+                              fill="none" />
+                    `;
+                }
+            });
+            
+            html += `</svg>`;
+        }
+
+        html += `
+                </div>
+            </div>
         `;
 
         // Task list with dependencies
@@ -471,7 +624,7 @@ class FlowchartManager {
                 <h2 class="print-section-title">Task Dependencies</h2>
         `;
 
-        if (this.dependencies.length === 0) {
+        if (filteredDependencies.length === 0) {
             html += `<p>No dependencies defined.</p>`;
         } else {
             html += `<table class="print-table">
@@ -485,7 +638,7 @@ class FlowchartManager {
                 <tbody>
             `;
 
-            this.dependencies.forEach(dep => {
+            filteredDependencies.forEach(dep => {
                 const fromTask = taskMap[dep.from];
                 const toTask = taskMap[dep.to];
 
@@ -516,7 +669,7 @@ class FlowchartManager {
                 <h2 class="print-section-title">Task Details</h2>
         `;
 
-        tasks.forEach(task => {
+        filteredTasks.forEach(task => {
             const customerName = customerMap[task.customerId] || 'Unknown';
             const priority = task.priority || 'medium';
             const status = task.status || 'pending';

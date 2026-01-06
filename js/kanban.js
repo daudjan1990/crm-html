@@ -4,10 +4,13 @@ class KanbanManager {
     constructor() {
         this.board = null;
         this.columnModal = null;
+        this.addTasksModal = null;
         this.columns = [];
         this.taskAssignments = {}; // Maps task IDs to column IDs
         this.draggedCard = null;
         this.currentEditColumnId = null;
+        this.filterCompany = '';
+        this.filterCompanyNumber = '';
         this.initialize();
     }
 
@@ -24,10 +27,17 @@ class KanbanManager {
         // Get board element
         this.board = document.getElementById('kanban-board');
         this.columnModal = document.getElementById('kanban-column-modal');
+        this.addTasksModal = document.getElementById('kanban-add-tasks-modal');
         
         if (!this.board) {
             console.error('Kanban board not found');
             return;
+        }
+
+        // Add tasks button
+        const addTasksBtn = document.getElementById('kanban-add-tasks-btn');
+        if (addTasksBtn) {
+            addTasksBtn.addEventListener('click', () => this.openAddTasksModal());
         }
 
         // Add column button
@@ -72,6 +82,60 @@ class KanbanManager {
             window.addEventListener('click', (e) => {
                 if (e.target === this.columnModal) {
                     this.closeColumnModal();
+                }
+            });
+        }
+
+        // Add tasks modal setup
+        if (this.addTasksModal) {
+            const closeBtn = this.addTasksModal.querySelector('.close');
+            const cancelBtn = this.addTasksModal.querySelector('.cancel-btn');
+            const confirmBtn = document.getElementById('kanban-add-tasks-confirm-btn');
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => this.closeAddTasksModal());
+            }
+
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => this.closeAddTasksModal());
+            }
+
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', () => this.confirmAddTasks());
+            }
+
+            // Filter functionality
+            const filterCompany = document.getElementById('kanban-task-filter-company');
+            const filterCompanyNumber = document.getElementById('kanban-task-filter-company-number');
+            const clearFilterBtn = document.getElementById('kanban-task-clear-filter');
+
+            if (filterCompany) {
+                filterCompany.addEventListener('input', (e) => {
+                    this.filterCompany = e.target.value.toLowerCase();
+                    this.renderTaskSelection();
+                });
+            }
+
+            if (filterCompanyNumber) {
+                filterCompanyNumber.addEventListener('input', (e) => {
+                    this.filterCompanyNumber = e.target.value.toLowerCase();
+                    this.renderTaskSelection();
+                });
+            }
+
+            if (clearFilterBtn) {
+                clearFilterBtn.addEventListener('click', () => {
+                    this.filterCompany = '';
+                    this.filterCompanyNumber = '';
+                    if (filterCompany) filterCompany.value = '';
+                    if (filterCompanyNumber) filterCompanyNumber.value = '';
+                    this.renderTaskSelection();
+                });
+            }
+
+            window.addEventListener('click', (e) => {
+                if (e.target === this.addTasksModal) {
+                    this.closeAddTasksModal();
                 }
             });
         }
@@ -396,6 +460,136 @@ class KanbanManager {
             this.saveKanbanData();
             this.renderKanban();
         }
+    }
+
+    openAddTasksModal() {
+        this.filterCompany = '';
+        this.filterCompanyNumber = '';
+        
+        const filterCompany = document.getElementById('kanban-task-filter-company');
+        const filterCompanyNumber = document.getElementById('kanban-task-filter-company-number');
+        if (filterCompany) filterCompany.value = '';
+        if (filterCompanyNumber) filterCompanyNumber.value = '';
+        
+        this.renderTaskSelection();
+        this.addTasksModal.classList.add('active');
+    }
+
+    closeAddTasksModal() {
+        if (this.addTasksModal) {
+            this.addTasksModal.classList.remove('active');
+        }
+    }
+
+    renderTaskSelection() {
+        const container = document.getElementById('kanban-tasks-selection-container');
+        if (!container) return;
+
+        const tasks = storage.getActiveCustomerTasks();
+        const customers = storage.getCustomers();
+        
+        // Create customer lookup
+        const customerMap = {};
+        customers.forEach(c => {
+            customerMap[c.id] = { name: c.name, companyNumber: c.companyNumber };
+        });
+
+        // Filter tasks - only show tasks not yet assigned to kanban
+        let availableTasks = tasks.filter(task => !this.taskAssignments[task.id]);
+
+        // Apply company name filter
+        if (this.filterCompany) {
+            availableTasks = availableTasks.filter(task => {
+                const customer = customerMap[task.customerId];
+                return customer && customer.name.toLowerCase().includes(this.filterCompany);
+            });
+        }
+
+        // Apply company number filter
+        if (this.filterCompanyNumber) {
+            availableTasks = availableTasks.filter(task => {
+                const customer = customerMap[task.customerId];
+                return customer && customer.companyNumber && 
+                       customer.companyNumber.toLowerCase().includes(this.filterCompanyNumber);
+            });
+        }
+
+        if (availableTasks.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <div class="empty-state-text">
+                        ${this.filterCompany || this.filterCompanyNumber ? 
+                          'No tasks found matching your filters.' : 
+                          'All tasks are already on the Kanban board.'}
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // Add select all/none buttons
+        let html = `
+            <div class="pdf-selection-actions">
+                <button class="btn btn-secondary" onclick="kanbanManager.selectAllTasks()">Select All</button>
+                <button class="btn btn-secondary" onclick="kanbanManager.selectNoneTasks()">Select None</button>
+            </div>
+        `;
+
+        // Build task selection list
+        html += availableTasks.map(task => {
+            const customer = customerMap[task.customerId];
+            const customerName = customer ? customer.name : 'Unknown';
+            const companyNumber = customer ? customer.companyNumber : '';
+            
+            return `
+                <div class="pdf-selection-item">
+                    <input type="checkbox" id="kanban-task-${task.id}" value="${task.id}" checked>
+                    <label class="pdf-selection-label" for="kanban-task-${task.id}">
+                        <strong>${this.escapeHtml(task.description)}</strong>
+                        <span class="pdf-selection-meta">${this.escapeHtml(customerName)} ${companyNumber ? `(${this.escapeHtml(companyNumber)})` : ''} - Due: ${this.formatDate(task.deadline)}</span>
+                    </label>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = html;
+    }
+
+    selectAllTasks() {
+        const checkboxes = document.querySelectorAll('#kanban-tasks-selection-container input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = true);
+    }
+
+    selectNoneTasks() {
+        const checkboxes = document.querySelectorAll('#kanban-tasks-selection-container input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    }
+
+    confirmAddTasks() {
+        // Get selected task IDs
+        const checkboxes = document.querySelectorAll('#kanban-tasks-selection-container input[type="checkbox"]:checked');
+        const selectedTaskIds = Array.from(checkboxes).map(cb => cb.value);
+
+        if (selectedTaskIds.length === 0) {
+            alert('Please select at least one task to add');
+            return;
+        }
+
+        // Assign selected tasks to the first column (if exists)
+        if (this.columns.length === 0) {
+            alert('Please create at least one column first');
+            return;
+        }
+
+        const firstColumnId = this.columns[0].id;
+        selectedTaskIds.forEach(taskId => {
+            this.taskAssignments[taskId] = firstColumnId;
+        });
+
+        this.saveKanbanData();
+        this.closeAddTasksModal();
+        this.renderKanban();
     }
 
     resetBoard() {
