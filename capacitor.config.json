@@ -1,0 +1,18 @@
+{
+  "appId": "com.example.crmapp",
+  "appName": "CRM App",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#4CAF50",
+      "showSpinner": true,
+      "spinnerColor": "#ffffff"
+    }
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "scheme": "CRM App"
+  }
+}

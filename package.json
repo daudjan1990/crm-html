@@ -1,0 +1,28 @@
+{
+  "name": "crm-app",
+  "version": "1.0.0",
+  "description": "CRM Application - iOS mobile app",
+  "main": "index.html",
+  "scripts": {
+    "init:capacitor": "npm install @capacitor/core @capacitor/cli @capacitor/ios",
+    "init:ios": "npx cap add ios",
+    "sync:ios": "npx cap sync ios",
+    "open:ios": "npx cap open ios",
+    "build:ios": "npx cap copy ios && npx cap sync ios"
+  },
+  "keywords": [
+    "crm",
+    "ios",
+    "mobile",
+    "customer-management"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@capacitor/cli": "^5.0.0"
+  },
+  "dependencies": {
+    "@capacitor/core": "^5.0.0",
+    "@capacitor/ios": "^5.0.0"
+  }
+}

@@ -43,3 +43,12 @@ coverage/
 # Backup files
 *.bak
 backup/
+
+# iOS / Capacitor build artifacts
+ios/
+android/
+.capacitor/
+
+# Icon generation script (keep in repo but don't track generated icons)
+icons/create-icons.sh
+icons/*.txt
