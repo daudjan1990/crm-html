@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS/PWA Test Page</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .icon-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .icon-preview img {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>CRM App - iOS/PWA Setup Test</h1>
+    
+    <h2>1. PWA Manifest Test</h2>
+    <div id="manifest-status" class="status info">Checking manifest...</div>
+    
+    <h2>2. Service Worker Test</h2>
+    <div id="sw-status" class="status info">Checking service worker...</div>
+    <button onclick="registerServiceWorker()">Register Service Worker</button>
+    
+    <h2>3. iOS Meta Tags Test</h2>
+    <div id="ios-status" class="status info">Checking iOS meta tags...</div>
+    
+    <h2>4. App Icons Preview</h2>
+    <div class="icon-preview">
+        <div>
+            <p>72x72</p>
+            <img src="icons/icon-72x72.png" alt="72x72 icon" width="72" height="72">
+        </div>
+        <div>
+            <p>128x128</p>
+            <img src="icons/icon-128x128.png" alt="128x128 icon" width="128" height="128">
+        </div>
+        <div>
+            <p>192x192</p>
+            <img src="icons/icon-192x192.png" alt="192x192 icon" width="192" height="192">
+        </div>
+    </div>
+    
+    <h2>5. Installation Instructions</h2>
+    <div class="status info">
+        <h3>For iOS (Safari):</h3>
+        <ol>
+            <li>Open this site in Safari on iPhone/iPad</li>
+            <li>Tap the Share button (square with arrow)</li>
+            <li>Scroll down and tap "Add to Home Screen"</li>
+            <li>Tap "Add" in the top right</li>
+        </ol>
+        
+        <h3>For Desktop (Chrome/Edge):</h3>
+        <ol>
+            <li>Look for the install icon in the address bar</li>
+            <li>Or go to menu → "Install CRM Application"</li>
+        </ol>
+    </div>
+    
+    <h2>6. Capacitor Instructions</h2>
+    <div class="status info">
+        <p>To build as a native iOS app using Capacitor:</p>
+        <pre style="background: #f4f4f4; padding: 10px; overflow-x: auto;">
+npm install
+npx cap add ios
+npx cap sync ios
+npx cap open ios
+        </pre>
+        <p>See <a href="CAPACITOR_GUIDE.md">CAPACITOR_GUIDE.md</a> for detailed instructions.</p>
+    </div>
+    
+    <h2>7. Native iOS Instructions</h2>
+    <div class="status info">
+        <p>To build a custom iOS app with Swift:</p>
+        <p>See <a href="ios-app/README.md">ios-app/README.md</a> for detailed instructions.</p>
+    </div>
+
+    <script>
+        // Test manifest
+        fetch('/manifest.json')
+            .then(response => response.json())
+            .then(data => {
+                const status = document.getElementById('manifest-status');
+                status.className = 'status success';
+                status.innerHTML = `
+                    ✅ Manifest loaded successfully!<br>
+                    App Name: ${data.name}<br>
+                    Short Name: ${data.short_name}<br>
+                    Icons: ${data.icons.length} configured
+                `;
+            })
+            .catch(error => {
+                const status = document.getElementById('manifest-status');
+                status.className = 'status error';
+                status.textContent = '❌ Error loading manifest: ' + error.message;
+            });
+
+        // Test iOS meta tags
+        const iosMetaTags = [
+            'apple-mobile-web-app-capable',
+            'apple-mobile-web-app-status-bar-style',
+            'apple-mobile-web-app-title'
+        ];
+        
+        let iosTagsFound = 0;
+        iosMetaTags.forEach(tag => {
+            if (document.querySelector(`meta[name="${tag}"]`)) {
+                iosTagsFound++;
+            }
+        });
+        
+        const iosStatus = document.getElementById('ios-status');
+        if (iosTagsFound === iosMetaTags.length) {
+            iosStatus.className = 'status success';
+            iosStatus.textContent = `✅ All ${iosTagsFound} iOS meta tags are present!`;
+        } else {
+            iosStatus.className = 'status error';
+            iosStatus.textContent = `❌ Only ${iosTagsFound}/${iosMetaTags.length} iOS meta tags found`;
+        }
+
+        // Service worker check
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration()
+                .then(registration => {
+                    const status = document.getElementById('sw-status');
+                    if (registration) {
+                        status.className = 'status success';
+                        status.textContent = '✅ Service worker is registered and active!';
+                    } else {
+                        status.className = 'status info';
+                        status.textContent = 'ℹ️ Service worker not registered yet. Click the button to register.';
+                    }
+                });
+        } else {
+            const status = document.getElementById('sw-status');
+            status.className = 'status error';
+            status.textContent = '❌ Service workers not supported in this browser';
+        }
+
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        const status = document.getElementById('sw-status');
+                        status.className = 'status success';
+                        status.textContent = '✅ Service worker registered successfully!';
+                        console.log('Service Worker registered:', registration);
+                    })
+                    .catch(error => {
+                        const status = document.getElementById('sw-status');
+                        status.className = 'status error';
+                        status.textContent = '❌ Service worker registration failed: ' + error.message;
+                        console.error('Service Worker registration failed:', error);
+                    });
+            }
+        }
+
+        // Auto-register service worker on page load
+        window.addEventListener('load', () => {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistration()
+                    .then(registration => {
+                        if (!registration) {
+                            registerServiceWorker();
+                        }
+                    });
+            }
+        });
+    </script>
+</body>
+</html>
