@@ -371,6 +371,117 @@ main {
     margin-top: 25px;
 }
 
+/* Search and Filter Styles */
+.search-container {
+    margin-bottom: 20px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background-color: #242d3d;
+    color: #e4e6eb;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #d4af37;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+    background-color: #2a3447;
+}
+
+.search-filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.search-filters .search-input {
+    flex: 1;
+    min-width: 200px;
+}
+
+.search-filters .btn {
+    white-space: nowrap;
+}
+
+/* Priority Badge Styles */
+.priority-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.priority-low {
+    background-color: #374151;
+    color: #9ca3af;
+    border: 1px solid #4b5563;
+}
+
+.priority-medium {
+    background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%);
+    color: #0f1419;
+    border: 1px solid #d4af37;
+}
+
+.priority-high {
+    background-color: #991b1b;
+    color: #fecaca;
+    border: 1px solid #dc2626;
+}
+
+/* Contact Person Styles */
+.contact-person-item {
+    background-color: #1e2836;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border-left: 3px solid #1e3a8a;
+    position: relative;
+}
+
+.contact-person-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.contact-person-header h4 {
+    color: #d4af37;
+    font-size: 14px;
+    margin: 0;
+}
+
+.contact-person-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.form-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.form-section-header h3 {
+    color: #d4af37;
+    font-size: 16px;
+    margin: 0;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {
