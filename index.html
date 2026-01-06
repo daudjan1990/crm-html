@@ -28,6 +28,9 @@
                         <button id="export-customers-pdf-btn" class="btn btn-secondary">Export PDF</button>
                     </div>
                 </div>
+                <div class="search-container">
+                    <input type="text" id="customer-search" placeholder="Search customers by name, contact, or company number..." class="search-input">
+                </div>
                 <div id="customers-list" class="data-list"></div>
             </section>
 
@@ -40,6 +43,13 @@
                         <button id="import-tasks-btn" class="btn btn-secondary">Import CSV</button>
                         <button id="export-tasks-btn" class="btn btn-secondary">Export CSV</button>
                         <button id="export-tasks-pdf-btn" class="btn btn-secondary">Export PDF</button>
+                    </div>
+                </div>
+                <div class="search-container">
+                    <div class="search-filters">
+                        <input type="text" id="task-search-responsible" placeholder="Search by responsible person..." class="search-input">
+                        <input type="date" id="task-search-date" placeholder="Filter by due date..." class="search-input">
+                        <button id="clear-task-filters" class="btn btn-secondary">Clear Filters</button>
                     </div>
                 </div>
                 <div id="tasks-list" class="data-list"></div>
@@ -58,7 +68,7 @@
                     <input type="text" id="customer-name" name="name" required>
                 </div>
                 <div class="form-group">
-                    <label for="customer-contact">Ansprechpartner (Contact Person) *</label>
+                    <label for="customer-contact">Main Contact Person *</label>
                     <input type="text" id="customer-contact" name="contact" required>
                 </div>
                 <div class="form-group">
@@ -77,6 +87,13 @@
                     <label for="customer-address">Address</label>
                     <textarea id="customer-address" name="address" rows="3"></textarea>
                 </div>
+                
+                <div class="form-section-header">
+                    <h3>Additional Contact Persons</h3>
+                    <button type="button" id="add-contact-person-btn" class="btn btn-secondary">+ Add Contact</button>
+                </div>
+                <div id="contact-persons-container"></div>
+                
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Save</button>
                     <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
@@ -112,6 +129,14 @@
                 <div class="form-group">
                     <label for="task-responsible">Responsible Person *</label>
                     <input type="text" id="task-responsible" name="responsible" required>
+                </div>
+                <div class="form-group">
+                    <label for="task-priority">Priority *</label>
+                    <select id="task-priority" name="priority" required>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="task-status">Status</label>

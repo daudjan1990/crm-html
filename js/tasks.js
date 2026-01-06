@@ -5,6 +5,9 @@ class TaskManager {
         this.modal = null;
         this.form = null;
         this.currentEditId = null;
+        this.searchResponsible = '';
+        this.searchDate = '';
+        this.filterCustomerId = null;
         this.initialize();
     }
 
@@ -82,6 +85,36 @@ class TaskManager {
             exportPdfBtn.addEventListener('click', () => pdfManager.exportTasksToPDF());
         }
 
+        // Search functionality
+        const searchResponsibleInput = document.getElementById('task-search-responsible');
+        const searchDateInput = document.getElementById('task-search-date');
+        const clearFiltersBtn = document.getElementById('clear-task-filters');
+
+        if (searchResponsibleInput) {
+            searchResponsibleInput.addEventListener('input', (e) => {
+                this.searchResponsible = e.target.value.toLowerCase();
+                this.renderTasks();
+            });
+        }
+
+        if (searchDateInput) {
+            searchDateInput.addEventListener('change', (e) => {
+                this.searchDate = e.target.value;
+                this.renderTasks();
+            });
+        }
+
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', () => {
+                this.searchResponsible = '';
+                this.searchDate = '';
+                this.filterCustomerId = null;
+                if (searchResponsibleInput) searchResponsibleInput.value = '';
+                if (searchDateInput) searchDateInput.value = '';
+                this.renderTasks();
+            });
+        }
+
         // Update customer dropdown
         this.updateCustomerDropdown();
         
@@ -122,6 +155,9 @@ class TaskManager {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('task-deadline').value = today;
         
+        // Set default priority
+        document.getElementById('task-priority').value = 'medium';
+        
         this.modal.classList.add('active');
     }
 
@@ -143,6 +179,7 @@ class TaskManager {
         document.getElementById('task-notes').value = task.notes || '';
         document.getElementById('task-deadline').value = task.deadline || '';
         document.getElementById('task-responsible').value = task.responsible || '';
+        document.getElementById('task-priority').value = task.priority || 'medium';
         document.getElementById('task-status').value = task.status || 'pending';
         
         this.modal.classList.add('active');
@@ -163,11 +200,12 @@ class TaskManager {
             notes: formData.get('notes').trim(),
             deadline: formData.get('deadline'),
             responsible: formData.get('responsible').trim(),
+            priority: formData.get('priority'),
             status: formData.get('status')
         };
 
         // Validate required fields
-        if (!task.customerId || !task.description || !task.deadline || !task.responsible) {
+        if (!task.customerId || !task.description || !task.deadline || !task.responsible || !task.priority) {
             alert('Please fill in all required fields');
             return;
         }
@@ -220,11 +258,35 @@ class TaskManager {
         
         if (!container) return;
 
-        if (tasks.length === 0) {
+        // Apply filters
+        let filteredTasks = tasks;
+        
+        // Filter by customer if set
+        if (this.filterCustomerId) {
+            filteredTasks = filteredTasks.filter(task => task.customerId === this.filterCustomerId);
+        }
+        
+        // Filter by responsible person
+        if (this.searchResponsible) {
+            filteredTasks = filteredTasks.filter(task => 
+                task.responsible.toLowerCase().includes(this.searchResponsible)
+            );
+        }
+        
+        // Filter by date
+        if (this.searchDate) {
+            filteredTasks = filteredTasks.filter(task => task.deadline === this.searchDate);
+        }
+
+        if (filteredTasks.length === 0) {
+            let emptyMessage = 'No tasks yet. Click "Add Task" to get started.';
+            if (this.searchResponsible || this.searchDate || this.filterCustomerId) {
+                emptyMessage = 'No tasks found matching your filters.';
+            }
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">📝</div>
-                    <div class="empty-state-text">No tasks yet. Click "Add Task" to get started.</div>
+                    <div class="empty-state-text">${emptyMessage}</div>
                 </div>
             `;
             return;
@@ -236,12 +298,18 @@ class TaskManager {
             customerMap[c.id] = c.name;
         });
 
-        // Sort tasks by deadline
-        tasks.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+        // Sort tasks by priority (high > medium > low) then by deadline
+        const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+        filteredTasks.sort((a, b) => {
+            const priorityDiff = (priorityOrder[b.priority] || 2) - (priorityOrder[a.priority] || 2);
+            if (priorityDiff !== 0) return priorityDiff;
+            return new Date(a.deadline) - new Date(b.deadline);
+        });
 
-        container.innerHTML = tasks.map(task => {
+        container.innerHTML = filteredTasks.map(task => {
             const customerName = customerMap[task.customerId] || 'Unknown Customer';
             const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'completed';
+            const priority = task.priority || 'medium';
             
             return `
                 <div class="data-item" style="${isOverdue ? 'border-left-color: #e74c3c;' : ''}">
@@ -267,6 +335,12 @@ class TaskManager {
                         <div class="data-field">
                             <div class="data-field-label">Responsible Person</div>
                             <div class="data-field-value">${this.escapeHtml(task.responsible)}</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-field-label">Priority</div>
+                            <div class="data-field-value">
+                                <span class="priority-badge priority-${priority}">${this.getPriorityLabel(priority)}</span>
+                            </div>
                         </div>
                         <div class="data-field">
                             <div class="data-field-label">Status</div>
@@ -302,6 +376,29 @@ class TaskManager {
             'completed': 'Completed'
         };
         return statusMap[status] || status;
+    }
+
+    getPriorityLabel(priority) {
+        const priorityMap = {
+            'low': 'Low',
+            'medium': 'Medium',
+            'high': 'High'
+        };
+        return priorityMap[priority] || priority;
+    }
+
+    filterByCustomer(customerId) {
+        this.filterCustomerId = customerId;
+        this.searchResponsible = '';
+        this.searchDate = '';
+        
+        // Clear search inputs
+        const searchResponsibleInput = document.getElementById('task-search-responsible');
+        const searchDateInput = document.getElementById('task-search-date');
+        if (searchResponsibleInput) searchResponsibleInput.value = '';
+        if (searchDateInput) searchDateInput.value = '';
+        
+        this.renderTasks();
     }
 
     escapeHtml(text) {
