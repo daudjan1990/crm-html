@@ -15,6 +15,7 @@
                 <button class="tab-button" data-tab="tasks">Tasks</button>
                 <button class="tab-button" data-tab="finished-projects">Finished Projects</button>
                 <button class="tab-button" data-tab="flowchart">Flowchart</button>
+                <button class="tab-button" data-tab="kanban">Kanban Board</button>
             </nav>
         </header>
 
@@ -49,6 +50,7 @@
                 </div>
                 <div class="search-container">
                     <div class="search-filters">
+                        <input type="text" id="task-search-company" placeholder="Search by company name..." class="search-input">
                         <input type="text" id="task-search-responsible" placeholder="Search by responsible person..." class="search-input">
                         <input type="date" id="task-search-date" placeholder="Filter by due date..." class="search-input">
                         <button id="clear-task-filters" class="btn btn-secondary">Clear Filters</button>
@@ -86,6 +88,24 @@
                 </div>
                 <div id="flowchart-canvas" class="flowchart-canvas">
                     <!-- Task boxes and dependencies will be rendered here -->
+                </div>
+            </section>
+
+            <!-- Kanban Board Tab -->
+            <section id="kanban-tab" class="tab-content">
+                <div class="section-header">
+                    <h2>Kanban Board</h2>
+                    <div class="action-buttons">
+                        <button id="kanban-add-column-btn" class="btn btn-primary">Add Column</button>
+                        <button id="kanban-reset-btn" class="btn btn-secondary">Reset Board</button>
+                        <button id="export-kanban-pdf-btn" class="btn btn-secondary">Export PDF</button>
+                    </div>
+                </div>
+                <div class="kanban-info">
+                    <p>Drag tasks between columns to update their status. Cards represent tasks with dependencies shown below each card.</p>
+                </div>
+                <div id="kanban-board" class="kanban-board">
+                    <!-- Kanban columns and cards will be rendered here -->
                 </div>
             </section>
         </main>
@@ -237,6 +257,35 @@
         </div>
     </div>
 
+    <!-- Kanban Column Modal -->
+    <div id="kanban-column-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="kanban-column-modal-title">Add Column</h2>
+            <form id="kanban-column-form">
+                <div class="form-group">
+                    <label for="column-name">Column Name *</label>
+                    <input type="text" id="column-name" name="name" required placeholder="e.g., To Do, In Progress, Done">
+                </div>
+                <div class="form-group">
+                    <label for="column-color">Column Color</label>
+                    <select id="column-color" name="color">
+                        <option value="blue">Blue</option>
+                        <option value="green">Green</option>
+                        <option value="orange">Orange</option>
+                        <option value="red">Red</option>
+                        <option value="purple">Purple</option>
+                        <option value="gray">Gray</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Column</button>
+                    <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Hidden file inputs for CSV import -->
     <input type="file" id="customer-csv-input" accept=".csv" style="display: none;">
     <input type="file" id="task-csv-input" accept=".csv" style="display: none;">
@@ -249,6 +298,7 @@
     <script src="js/tasks.js"></script>
     <script src="js/finishedProjects.js"></script>
     <script src="js/flowchart.js"></script>
+    <script src="js/kanban.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

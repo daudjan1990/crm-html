@@ -5,6 +5,7 @@ class TaskManager {
         this.modal = null;
         this.form = null;
         this.currentEditId = null;
+        this.searchCompany = '';
         this.searchResponsible = '';
         this.searchDate = '';
         this.filterCustomerId = null;
@@ -86,9 +87,17 @@ class TaskManager {
         }
 
         // Search functionality
+        const searchCompanyInput = document.getElementById('task-search-company');
         const searchResponsibleInput = document.getElementById('task-search-responsible');
         const searchDateInput = document.getElementById('task-search-date');
         const clearFiltersBtn = document.getElementById('clear-task-filters');
+
+        if (searchCompanyInput) {
+            searchCompanyInput.addEventListener('input', (e) => {
+                this.searchCompany = e.target.value.toLowerCase();
+                this.renderTasks();
+            });
+        }
 
         if (searchResponsibleInput) {
             searchResponsibleInput.addEventListener('input', (e) => {
@@ -106,9 +115,11 @@ class TaskManager {
 
         if (clearFiltersBtn) {
             clearFiltersBtn.addEventListener('click', () => {
+                this.searchCompany = '';
                 this.searchResponsible = '';
                 this.searchDate = '';
                 this.filterCustomerId = null;
+                if (searchCompanyInput) searchCompanyInput.value = '';
                 if (searchResponsibleInput) searchResponsibleInput.value = '';
                 if (searchDateInput) searchDateInput.value = '';
                 this.renderTasks();
@@ -266,6 +277,14 @@ class TaskManager {
             filteredTasks = filteredTasks.filter(task => task.customerId === this.filterCustomerId);
         }
         
+        // Filter by company name
+        if (this.searchCompany) {
+            filteredTasks = filteredTasks.filter(task => {
+                const customerName = customerMap[task.customerId] || '';
+                return customerName.toLowerCase().includes(this.searchCompany);
+            });
+        }
+        
         // Filter by responsible person
         if (this.searchResponsible) {
             filteredTasks = filteredTasks.filter(task => 
@@ -280,7 +299,7 @@ class TaskManager {
 
         if (filteredTasks.length === 0) {
             let emptyMessage = 'No tasks yet. Click "Add Task" to get started.';
-            if (this.searchResponsible || this.searchDate || this.filterCustomerId) {
+            if (this.searchCompany || this.searchResponsible || this.searchDate || this.filterCustomerId) {
                 emptyMessage = 'No tasks found matching your filters.';
             }
             container.innerHTML = `
@@ -390,12 +409,15 @@ class TaskManager {
 
     filterByCustomer(customerId) {
         this.filterCustomerId = customerId;
+        this.searchCompany = '';
         this.searchResponsible = '';
         this.searchDate = '';
         
         // Clear search inputs
+        const searchCompanyInput = document.getElementById('task-search-company');
         const searchResponsibleInput = document.getElementById('task-search-responsible');
         const searchDateInput = document.getElementById('task-search-date');
+        if (searchCompanyInput) searchCompanyInput.value = '';
         if (searchResponsibleInput) searchResponsibleInput.value = '';
         if (searchDateInput) searchDateInput.value = '';
         

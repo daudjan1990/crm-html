@@ -56,6 +56,11 @@ class CRMApp {
             if (tabName === 'flowchart' && window.flowchartManager) {
                 window.flowchartManager.renderFlowchart();
             }
+
+            // Re-render kanban when switching to kanban tab
+            if (tabName === 'kanban' && window.kanbanManager) {
+                window.kanbanManager.renderKanban();
+            }
         }
     }
 
