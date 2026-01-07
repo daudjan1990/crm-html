@@ -9,6 +9,10 @@ class FlowchartManager {
         this.draggedTask = null;
         this.dragOffset = { x: 0, y: 0 };
         this.filterCompany = '';
+        this.zoom = 1;
+        this.pan = { x: 0, y: 0 };
+        this.isPanning = false;
+        this.panStart = { x: 0, y: 0 };
         this.initialize();
     }
 
@@ -47,6 +51,18 @@ class FlowchartManager {
         const exportPdfBtn = document.getElementById('export-flowchart-pdf-btn');
         if (exportPdfBtn) {
             exportPdfBtn.addEventListener('click', () => this.exportFlowchartToPDF());
+        }
+
+        // Auto-arrange button
+        const autoArrangeBtn = document.getElementById('flowchart-auto-arrange-btn');
+        if (autoArrangeBtn) {
+            autoArrangeBtn.addEventListener('click', () => this.autoArrangeTasks());
+        }
+
+        // Reset view button
+        const resetViewBtn = document.getElementById('flowchart-reset-view-btn');
+        if (resetViewBtn) {
+            resetViewBtn.addEventListener('click', () => this.resetView());
         }
 
         // Filter functionality
@@ -95,6 +111,45 @@ class FlowchartManager {
             });
         }
 
+        // Zoom and pan functionality
+        if (this.canvas) {
+            // Mouse wheel zoom
+            this.canvas.addEventListener('wheel', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                    this.zoom *= delta;
+                    this.zoom = Math.max(0.3, Math.min(3, this.zoom));
+                    this.applyTransform();
+                }
+            }, { passive: false });
+
+            // Pan with middle mouse or shift + drag
+            this.canvas.addEventListener('mousedown', (e) => {
+                if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+                    e.preventDefault();
+                    this.isPanning = true;
+                    this.panStart = { x: e.clientX - this.pan.x, y: e.clientY - this.pan.y };
+                    this.canvas.style.cursor = 'grabbing';
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (this.isPanning) {
+                    this.pan.x = e.clientX - this.panStart.x;
+                    this.pan.y = e.clientY - this.panStart.y;
+                    this.applyTransform();
+                }
+            });
+
+            document.addEventListener('mouseup', (e) => {
+                if (e.button === 1 || e.button === 0) {
+                    this.isPanning = false;
+                    this.canvas.style.cursor = '';
+                }
+            });
+        }
+
         // Load saved data
         this.loadFlowchartData();
 
@@ -136,6 +191,102 @@ class FlowchartManager {
         }
     }
 
+    applyTransform() {
+        if (!this.canvas) return;
+        const content = this.canvas.querySelector('.flowchart-content');
+        if (content) {
+            content.style.transform = `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`;
+        }
+    }
+
+    resetView() {
+        this.zoom = 1;
+        this.pan = { x: 0, y: 0 };
+        this.applyTransform();
+    }
+
+    autoArrangeTasks() {
+        const tasks = storage.getActiveCustomerTasks();
+        if (tasks.length === 0) return;
+
+        // Build dependency graph
+        const graph = new Map();
+        const inDegree = new Map();
+        
+        tasks.forEach(task => {
+            graph.set(task.id, []);
+            inDegree.set(task.id, 0);
+        });
+
+        this.dependencies.forEach(dep => {
+            if (graph.has(dep.from) && graph.has(dep.to)) {
+                graph.get(dep.from).push(dep.to);
+                inDegree.set(dep.to, inDegree.get(dep.to) + 1);
+            }
+        });
+
+        // Topological sort to determine layers
+        const layers = [];
+        const taskLayer = new Map();
+        const queue = [];
+
+        // Start with tasks that have no dependencies
+        inDegree.forEach((degree, taskId) => {
+            if (degree === 0) {
+                queue.push(taskId);
+                taskLayer.set(taskId, 0);
+            }
+        });
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+            const currentLayer = taskLayer.get(current);
+
+            if (!layers[currentLayer]) {
+                layers[currentLayer] = [];
+            }
+            layers[currentLayer].push(current);
+
+            const dependents = graph.get(current) || [];
+            dependents.forEach(dependent => {
+                inDegree.set(dependent, inDegree.get(dependent) - 1);
+                if (inDegree.get(dependent) === 0) {
+                    taskLayer.set(dependent, currentLayer + 1);
+                    queue.push(dependent);
+                }
+            });
+        }
+
+        // Handle any remaining tasks (circular dependencies or disconnected)
+        tasks.forEach(task => {
+            if (!taskLayer.has(task.id)) {
+                const lastLayer = layers.length;
+                if (!layers[lastLayer]) {
+                    layers[lastLayer] = [];
+                }
+                layers[lastLayer].push(task.id);
+                taskLayer.set(task.id, lastLayer);
+            }
+        });
+
+        // Position tasks based on layers
+        const layerSpacing = 280;
+        const taskSpacing = 160;
+        const startX = 100;
+        const startY = 80;
+
+        layers.forEach((layerTasks, layerIndex) => {
+            const x = startX + layerIndex * layerSpacing;
+            layerTasks.forEach((taskId, indexInLayer) => {
+                const y = startY + indexInLayer * taskSpacing;
+                this.taskPositions[taskId] = { x, y };
+            });
+        });
+
+        this.saveFlowchartData();
+        this.renderFlowchart();
+    }
+
     renderFlowchart() {
         if (!this.canvas) return;
 
@@ -174,23 +325,31 @@ class FlowchartManager {
         // Clear canvas
         this.canvas.innerHTML = '';
 
+        // Create container for zoom/pan
+        const content = document.createElement('div');
+        content.className = 'flowchart-content';
+        this.canvas.appendChild(content);
+
         // Create SVG for arrows
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('class', 'flowchart-svg');
         svg.innerHTML = `
             <defs>
-                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-                    <polygon points="0 0, 10 3, 0 6" fill="#d4af37" />
+                <marker id="arrowhead" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto">
+                    <polygon points="0 0, 12 6, 0 12" fill="#d4af37" />
                 </marker>
             </defs>
         `;
-        this.canvas.appendChild(svg);
+        content.appendChild(svg);
 
         // Render tasks
         tasks.forEach((task, index) => {
             const taskBox = this.createTaskBox(task, customerMap[task.customerId] || 'Unknown', index);
-            this.canvas.appendChild(taskBox);
+            content.appendChild(taskBox);
         });
+
+        // Apply current transform
+        this.applyTransform();
 
         // Render dependency arrows
         this.renderDependencyArrows();
@@ -311,35 +470,39 @@ class FlowchartManager {
     }
 
     renderDependencyArrows() {
-        const svg = this.canvas.querySelector('.flowchart-svg');
+        const content = this.canvas.querySelector('.flowchart-content');
+        if (!content) return;
+        
+        const svg = content.querySelector('.flowchart-svg');
         if (!svg) return;
 
         // Clear existing arrows
-        const existingPaths = svg.querySelectorAll('.flowchart-arrow');
+        const existingPaths = svg.querySelectorAll('.flowchart-arrow, .flowchart-arrow-group');
         existingPaths.forEach(path => path.remove());
 
         // Draw arrows for each dependency
-        this.dependencies.forEach(dep => {
-            const fromBox = this.canvas.querySelector(`[data-task-id="${dep.from}"]`);
-            const toBox = this.canvas.querySelector(`[data-task-id="${dep.to}"]`);
+        this.dependencies.forEach((dep, index) => {
+            const fromBox = content.querySelector(`[data-task-id="${dep.from}"]`);
+            const toBox = content.querySelector(`[data-task-id="${dep.to}"]`);
 
             if (fromBox && toBox) {
-                const path = this.createArrow(fromBox, toBox);
-                svg.appendChild(path);
+                const arrowGroup = this.createArrow(fromBox, toBox, dep, index);
+                svg.appendChild(arrowGroup);
             }
         });
     }
 
-    createArrow(fromBox, toBox) {
+    createArrow(fromBox, toBox, dep, index) {
+        const content = this.canvas.querySelector('.flowchart-content');
+        const contentRect = content.getBoundingClientRect();
         const fromRect = fromBox.getBoundingClientRect();
         const toRect = toBox.getBoundingClientRect();
-        const canvasRect = this.canvas.getBoundingClientRect();
 
-        // Calculate center points relative to canvas
-        const fromX = fromRect.left - canvasRect.left + fromRect.width / 2;
-        const fromY = fromRect.top - canvasRect.top + fromRect.height / 2;
-        const toX = toRect.left - canvasRect.left + toRect.width / 2;
-        const toY = toRect.top - canvasRect.top + toRect.height / 2;
+        // Calculate center points relative to content container
+        const fromX = fromRect.left - contentRect.left + fromRect.width / 2;
+        const fromY = fromRect.top - contentRect.top + fromRect.height / 2;
+        const toX = toRect.left - contentRect.left + toRect.width / 2;
+        const toY = toRect.top - contentRect.top + toRect.height / 2;
 
         // Calculate angle
         const angle = Math.atan2(toY - fromY, toX - fromX);
@@ -347,15 +510,67 @@ class FlowchartManager {
         // Calculate start and end points at box edges
         const fromEdgeX = fromX + Math.cos(angle) * (fromRect.width / 2);
         const fromEdgeY = fromY + Math.sin(angle) * (fromRect.height / 2);
-        const toEdgeX = toX - Math.cos(angle) * (toRect.width / 2);
-        const toEdgeY = toY - Math.sin(angle) * (toRect.height / 2);
+        const toEdgeX = toX - Math.cos(angle) * (toRect.width / 2 + 10);
+        const toEdgeY = toY - Math.sin(angle) * (toRect.height / 2 + 10);
 
-        // Create path element
+        // Create group for arrow and hit area
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('class', 'flowchart-arrow-group');
+        group.setAttribute('data-from', dep.from);
+        group.setAttribute('data-to', dep.to);
+
+        // Create invisible thick path for easier clicking
+        const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        hitArea.setAttribute('d', `M ${fromEdgeX} ${fromEdgeY} L ${toEdgeX} ${toEdgeY}`);
+        hitArea.setAttribute('stroke', 'transparent');
+        hitArea.setAttribute('stroke-width', '20');
+        hitArea.setAttribute('fill', 'none');
+        hitArea.style.cursor = 'pointer';
+
+        // Create visible path element
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('class', 'flowchart-arrow');
         path.setAttribute('d', `M ${fromEdgeX} ${fromEdgeY} L ${toEdgeX} ${toEdgeY}`);
+        path.setAttribute('stroke', '#d4af37');
+        path.setAttribute('stroke-width', '3');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('marker-end', 'url(#arrowhead)');
+        path.style.pointerEvents = 'none';
 
-        return path;
+        // Add hover and click effects
+        group.addEventListener('mouseenter', () => {
+            path.setAttribute('stroke', '#ffd700');
+            path.setAttribute('stroke-width', '4');
+            fromBox.style.borderColor = '#ffd700';
+            toBox.style.borderColor = '#ffd700';
+        });
+
+        group.addEventListener('mouseleave', () => {
+            path.setAttribute('stroke', '#d4af37');
+            path.setAttribute('stroke-width', '3');
+            fromBox.style.borderColor = '#d4af37';
+            toBox.style.borderColor = '#d4af37';
+        });
+
+        group.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm('Remove this dependency?')) {
+                this.removeDependency(dep.from, dep.to);
+            }
+        });
+
+        group.appendChild(hitArea);
+        group.appendChild(path);
+
+        return group;
+    }
+
+    removeDependency(fromTaskId, toTaskId) {
+        this.dependencies = this.dependencies.filter(dep => 
+            !(dep.from === fromTaskId && dep.to === toTaskId)
+        );
+        this.saveFlowchartData();
+        this.renderDependencyArrows();
     }
 
     openDependencyModal() {
