@@ -193,6 +193,30 @@ main {
     font-weight: 600;
     color: #d4af37;
     flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.task-toggle-btn {
+    background: none;
+    border: none;
+    color: #d4af37;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    border-radius: 3px;
+}
+
+.task-toggle-btn:hover {
+    background-color: rgba(212, 175, 55, 0.2);
+    transform: scale(1.1);
 }
 
 .data-item-actions {

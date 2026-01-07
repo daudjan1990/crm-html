@@ -9,6 +9,7 @@ class TaskManager {
         this.searchResponsible = '';
         this.searchDate = '';
         this.filterCustomerId = null;
+        this.collapsedTasks = new Set(); // Track which tasks are collapsed
         this.initialize();
     }
 
@@ -146,7 +147,9 @@ class TaskManager {
         customers.sort((a, b) => a.name.localeCompare(b.name)).forEach(customer => {
             const option = document.createElement('option');
             option.value = customer.id;
-            option.textContent = customer.name;
+            // Include company number in the dropdown text
+            const companyNumber = customer.companyNumber ? ` (${customer.companyNumber})` : '';
+            option.textContent = `${customer.name}${companyNumber}`;
             select.appendChild(option);
         });
 
@@ -262,6 +265,15 @@ class TaskManager {
         }
     }
 
+    toggleTask(id) {
+        if (this.collapsedTasks.has(id)) {
+            this.collapsedTasks.delete(id);
+        } else {
+            this.collapsedTasks.add(id);
+        }
+        this.renderTasks();
+    }
+
     renderTasks() {
         const tasks = storage.getActiveCustomerTasks(); // Only get tasks for non-finished customers
         const customers = storage.getCustomers();
@@ -330,11 +342,16 @@ class TaskManager {
             const customerName = customerMap[task.customerId] || 'Unknown Customer';
             const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'completed';
             const priority = task.priority || 'medium';
+            const isCollapsed = this.collapsedTasks.has(task.id);
+            const toggleIcon = isCollapsed ? '▶' : '▼';
             
             return `
                 <div class="data-item" style="${isOverdue ? 'border-left-color: #e74c3c;' : ''}">
                     <div class="data-item-header">
                         <div class="data-item-title">
+                            <button class="task-toggle-btn" onclick="taskManager.toggleTask('${task.id}')" title="${isCollapsed ? 'Expand' : 'Collapse'} task">
+                                ${toggleIcon}
+                            </button>
                             ${this.escapeHtml(task.description)}
                             ${isOverdue ? '<span style="color: #e74c3c; font-size: 14px; margin-left: 10px;">⚠ OVERDUE</span>' : ''}
                         </div>
@@ -343,7 +360,7 @@ class TaskManager {
                             <button class="btn btn-danger" onclick="taskManager.deleteTask('${task.id}')">Delete</button>
                         </div>
                     </div>
-                    <div class="data-item-content">
+                    <div class="data-item-content" style="${isCollapsed ? 'display: none;' : ''}">
                         <div class="data-field">
                             <div class="data-field-label">Customer</div>
                             <div class="data-field-value">${this.escapeHtml(customerName)}</div>
