@@ -215,8 +215,7 @@ main {
 }
 
 .task-toggle-btn:hover {
-    background-color: rgba(212, 175, 55, 0.2);
-    transform: scale(1.1);
+    background-color: rgba(212, 175, 55, 0.3);
 }
 
 .data-item-actions {
