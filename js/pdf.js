@@ -508,6 +508,8 @@ class PDFManager {
             customerTasks.forEach((task, index) => {
                 const priority = task.priority || 'medium';
                 const status = task.status || 'pending';
+                // Calculate global task index across all customer groups for unique attachment IDs
+                // This sums up all tasks in previous customer groups plus the current task index
                 const globalTaskIndex = Object.keys(tasksByCustomer).slice(0, groupIndex).reduce((sum, k) => sum + tasksByCustomer[k].length, 0) + index;
                 html += `
                     <div class="print-item">
@@ -625,7 +627,7 @@ class PDFManager {
 
     // Generate HTML for PDF content (embedded PDF viewer)
     generatePDFContentHTML(attachment) {
-        // For PDF files, we'll embed them as an iframe or object tag
+        // For PDF files, we'll embed them using an embed tag
         // The data is already in base64 format from the attachment
         return `
             <div class="print-pdf-viewer">
@@ -646,8 +648,22 @@ class PDFManager {
     // Generate HTML for EML content (parsed email display)
     generateEMLContentHTML(attachment) {
         try {
-            // Decode base64 data
-            const base64Data = attachment.data.split(',')[1]; // Remove data:type;base64, prefix
+            // Validate and decode base64 data
+            if (!attachment.data || typeof attachment.data !== 'string') {
+                throw new Error('Invalid attachment data');
+            }
+            
+            // Ensure data URL format is correct
+            if (!attachment.data.startsWith('data:')) {
+                throw new Error('Invalid data URL format');
+            }
+            
+            const parts = attachment.data.split(',');
+            if (parts.length !== 2) {
+                throw new Error('Invalid data URL structure');
+            }
+            
+            const base64Data = parts[1];
             const decodedData = atob(base64Data);
             
             // Parse EML content
@@ -775,7 +791,8 @@ class PDFManager {
         const toggle = document.getElementById(`${attachmentId}-toggle`);
         
         if (content && toggle) {
-            if (content.style.display === 'none') {
+            const isHidden = content.style.display === 'none' || content.style.display === '';
+            if (isHidden) {
                 content.style.display = 'block';
                 toggle.textContent = '▼';
             } else {

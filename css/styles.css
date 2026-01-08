@@ -1647,14 +1647,11 @@ body.print-preview-open {
     .print-attachment-content {
         background: white !important;
         color: #000 !important;
+        display: block !important; /* Always show content in print */
     }
 
     .print-attachment-toggle {
         display: none; /* Hide toggle in print */
-    }
-
-    .print-attachment-content {
-        display: block !important; /* Always show content in print */
     }
 
     .print-pdf-embed {
