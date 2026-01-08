@@ -16,10 +16,16 @@ class CRMApp {
     }
 
     setupApp() {
-        this.setupTabNavigation();
-        this.setupGlobalErrorHandling();
-        this.checkBrowserCompatibility();
-        this.showWelcomeMessage();
+        // Wait for storage to initialize before setting up the rest
+        storage.initPromise.then(() => {
+            this.setupTabNavigation();
+            this.setupGlobalErrorHandling();
+            this.checkBrowserCompatibility();
+            this.showWelcomeMessage();
+        }).catch(err => {
+            console.error('Error initializing storage:', err);
+            alert('Error initializing storage. Some features may not work correctly.');
+        });
     }
 
     setupTabNavigation() {
@@ -182,7 +188,7 @@ Get started by adding your first customer!
     importBackupData(file) {
         const reader = new FileReader();
         
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             try {
                 const backup = JSON.parse(e.target.result);
                 
@@ -192,7 +198,7 @@ Get started by adding your first customer!
                 }
 
                 if (confirm('This will replace all current data. Are you sure?')) {
-                    storage.importBackup(backup);
+                    await storage.importBackup(backup);
                     
                     // Refresh displays
                     if (window.customerManager) {
