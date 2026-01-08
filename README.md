@@ -1,6 +1,6 @@
 # CRM Application
 
-A lightweight, client-side Customer Relationship Management (CRM) application built with HTML, CSS, and JavaScript. No server or database required - all data is stored locally in your browser.
+A lightweight, client-side Customer Relationship Management (CRM) application built with HTML, CSS, and JavaScript. Features advanced IndexedDB storage for large files and data capacity.
 
 ## Features
 
@@ -12,22 +12,26 @@ A lightweight, client-side Customer Relationship Management (CRM) application bu
 
 ### ✅ Task/Project Tracking
 - Create tasks assigned to specific customers
-- Task fields: Description, Notes, Deadline, Responsible Person, Status
+- Task fields: Description, Notes, Deadline, Responsible Person, Status, Priority
 - Three status levels: Pending, In Progress, Completed
+- File attachments support (up to 50MB per file)
 - Automatic overdue task highlighting
-- Sort tasks by deadline
+- Sort tasks by priority and deadline
 
 ### 📊 Data Import/Export
 - **CSV Export**: Export customers and tasks to CSV format
 - **CSV Import**: Import customers and tasks from CSV files
-- **PDF Export**: Generate professional PDF reports for customers and tasks
+- **Interactive PDF Export**: Generate professional PDF reports with item selection and print preview
 - **Automatic Nightly Backup**: Automatic JSON backup creation (configurable)
 
 ### 💾 Data Persistence
-- All data stored in browser's localStorage
+- **IndexedDB storage** for large data capacity and file storage
+- Automatic migration from localStorage to IndexedDB
+- Support for large file attachments (up to 50MB per file)
 - No server required
 - Data persists across browser sessions
 - Manual backup/restore functionality
+- Fallback to localStorage if IndexedDB is unavailable
 
 ### 🎨 User Interface
 - Clean, modern, and intuitive design
@@ -35,6 +39,7 @@ A lightweight, client-side Customer Relationship Management (CRM) application bu
 - Tab-based navigation between Customers and Tasks
 - Modal dialogs for adding/editing records
 - Visual feedback for user actions
+- Interactive print preview for PDF exports
 
 ## Getting Started
 
@@ -49,8 +54,43 @@ No build process, no dependencies to install, no server setup required.
 ### Browser Requirements
 
 - Modern web browser with JavaScript enabled
-- localStorage support (all modern browsers)
+- IndexedDB support (all modern browsers support it)
 - For best experience: Chrome, Firefox, Safari, or Edge (latest versions)
+
+## Storage System
+
+### IndexedDB Storage
+The application now uses **IndexedDB** as the primary storage mechanism, providing:
+- **Much larger storage capacity** compared to localStorage (typically hundreds of MBs to GBs)
+- **Efficient file storage** without base64 encoding overhead
+- **Better performance** for large datasets
+- **Structured data storage** with indexes for fast queries
+
+### Automatic Migration
+- On first load, the application automatically migrates any existing localStorage data to IndexedDB
+- Migration is seamless and requires no user intervention
+- A confirmation message is shown when migration completes
+
+### Storage Limits
+- **localStorage fallback**: ~5-10MB per domain (if IndexedDB is unavailable)
+- **IndexedDB**: Typically 50% of available disk space (browser-dependent)
+- **File attachments**: Up to 50MB per file (increased from 5MB)
+- **Recommended**: For datasets over 1000 records or large file attachments, IndexedDB provides optimal performance
+
+## File Attachments
+
+### Supported Features
+- Attach multiple files to tasks (PDF, EML, MSG, TXT formats)
+- File size limit: **50MB per file** (10x increase from previous limit)
+- Files stored efficiently in IndexedDB
+- Download attachments anytime
+- Attachments included in task exports
+
+### Usage
+1. When creating or editing a task, click on the "Attachments" field
+2. Select one or multiple files (up to 50MB each)
+3. Files are automatically uploaded and stored
+4. View and download attachments from the task details
 
 ## Usage Guide
 
@@ -247,10 +287,13 @@ CREATE TABLE tasks (
 
 ## Data Security
 
+## Data Security
+
 ### Current Implementation
-- Data stored locally in browser
+- Data stored locally in browser using IndexedDB
 - No server transmission
-- Data cleared when browser cache is cleared
+- Data persists until explicitly deleted or browser data is cleared
+- Automatic encrypted storage by browser (implementation varies by browser)
 
 ### For Production Use
 When integrating with a backend, consider:
@@ -262,20 +305,34 @@ When integrating with a backend, consider:
 - CSRF tokens
 - Rate limiting
 
-## Browser Storage Limits
+## Browser Storage Information
 
-- localStorage typically has a 5-10MB limit per domain
-- For large datasets (>1000 records), consider:
-  - Migrating to IndexedDB
-  - Implementing pagination
-  - Adding backend storage
+### Storage Capacity
+- **localStorage**: Typically 5-10MB limit per domain (used as fallback only)
+- **IndexedDB**: Much larger capacity - typically 50% of available disk space
+  - Chrome: Up to 80% of total disk space
+  - Firefox: Up to 50% of free disk space
+  - Safari: Up to 1GB (may prompt user for more)
+
+### Current Implementation
+This application now uses **IndexedDB** as the primary storage, providing:
+- Support for large datasets (10,000+ records)
+- Efficient file storage (up to 50MB per file)
+- Better performance for complex queries
+- Automatic fallback to localStorage if IndexedDB is unavailable
 
 ## Troubleshooting
 
 ### Data Not Saving
-- Check if localStorage is enabled in browser
-- Check browser storage quota
+- Check if IndexedDB is enabled in browser settings
+- Check browser storage quota (browser settings > storage)
 - Clear browser cache and reload
+- Check browser console for error messages
+
+### Migration Issues
+- If migration from localStorage fails, data remains in localStorage
+- You can manually export data as JSON backup and re-import after clearing storage
+- Check browser console for specific migration error messages
 
 ### Import Not Working
 - Verify CSV format matches expected structure
