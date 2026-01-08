@@ -10,6 +10,7 @@ class TaskManager {
         this.searchDate = '';
         this.filterCustomerId = null;
         this.collapsedTasks = new Set(); // Track which tasks are collapsed
+        this.MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit per file
         this.initialize();
     }
 
@@ -495,14 +496,14 @@ class TaskManager {
     // Process uploaded files and convert to base64
     async processFiles(files) {
         const attachments = [];
-        const maxFileSize = 5 * 1024 * 1024; // 5MB limit per file
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             
             // Check file size
-            if (file.size > maxFileSize) {
-                throw new Error(`File "${file.name}" is too large. Maximum size is 5MB.`);
+            if (file.size > this.MAX_FILE_SIZE) {
+                const maxSizeMB = Math.round(this.MAX_FILE_SIZE / (1024 * 1024));
+                throw new Error(`File "${file.name}" is too large. Maximum size is ${maxSizeMB}MB.`);
             }
 
             // Read file as base64
@@ -533,11 +534,23 @@ class TaskManager {
 
     // Generate unique attachment ID
     generateAttachmentId() {
-        // Use crypto.randomUUID if available, otherwise fallback to timestamp + random
+        // Use crypto.randomUUID if available
         if (typeof crypto !== 'undefined' && crypto.randomUUID) {
             return crypto.randomUUID();
         }
-        return Date.now().toString(36) + '-' + Math.random().toString(36).substring(2) + '-' + Math.random().toString(36).substring(2);
+        
+        // Fallback to crypto.getRandomValues if available
+        if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+            const array = new Uint8Array(16);
+            crypto.getRandomValues(array);
+            return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+        
+        // Last resort: timestamp + multiple random values for better uniqueness
+        return Date.now().toString(36) + '-' + 
+               Math.random().toString(36).substring(2) + '-' + 
+               Math.random().toString(36).substring(2) + '-' + 
+               Math.random().toString(36).substring(2);
     }
 
     // Display current attachments in edit modal
