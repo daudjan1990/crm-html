@@ -172,6 +172,9 @@ class TaskManager {
         // Set default priority
         document.getElementById('task-priority').value = 'medium';
         
+        // Clear current attachments display
+        document.getElementById('current-attachments').innerHTML = '';
+        
         this.modal.classList.add('active');
     }
 
@@ -196,6 +199,9 @@ class TaskManager {
         document.getElementById('task-priority').value = task.priority || 'medium';
         document.getElementById('task-status').value = task.status || 'pending';
         
+        // Display existing attachments
+        this.displayCurrentAttachments(task.attachments || []);
+        
         this.modal.classList.add('active');
     }
 
@@ -205,7 +211,7 @@ class TaskManager {
         this.currentEditId = null;
     }
 
-    handleSubmit() {
+    async handleSubmit() {
         // Get form data
         const formData = new FormData(this.form);
         const task = {
@@ -229,6 +235,30 @@ class TaskManager {
         if (!customer) {
             alert('Selected customer does not exist');
             return;
+        }
+
+        // Handle file attachments
+        const fileInput = document.getElementById('task-attachments');
+        const files = fileInput.files;
+        
+        // Get existing attachments if editing
+        let existingAttachments = [];
+        if (this.currentEditId) {
+            const existingTask = storage.getTaskById(this.currentEditId);
+            existingAttachments = existingTask?.attachments || [];
+        }
+        
+        // Process new files
+        if (files.length > 0) {
+            try {
+                const newAttachments = await this.processFiles(files);
+                task.attachments = [...existingAttachments, ...newAttachments];
+            } catch (error) {
+                alert('Error processing attachments: ' + error.message);
+                return;
+            }
+        } else {
+            task.attachments = existingAttachments;
         }
 
         // Save task
@@ -391,6 +421,21 @@ class TaskManager {
                             <div class="data-field-value">${this.escapeHtml(task.notes)}</div>
                         </div>
                         ` : ''}
+                        ${task.attachments && task.attachments.length > 0 ? `
+                        <div class="data-field" style="grid-column: 1 / -1;">
+                            <div class="data-field-label">Attachments (${task.attachments.length})</div>
+                            <div class="data-field-value">
+                                ${task.attachments.map(att => `
+                                    <div class="attachment-item">
+                                        <span class="attachment-icon">📎</span>
+                                        <span class="attachment-name">${this.escapeHtml(att.name)}</span>
+                                        <span class="attachment-size">(${this.formatFileSize(att.size)})</span>
+                                        <button class="btn btn-sm btn-secondary" onclick="taskManager.downloadAttachment('${task.id}', '${att.id}')">Download</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -445,6 +490,114 @@ class TaskManager {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    // Process uploaded files and convert to base64
+    async processFiles(files) {
+        const attachments = [];
+        const maxFileSize = 5 * 1024 * 1024; // 5MB limit per file
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            
+            // Check file size
+            if (file.size > maxFileSize) {
+                throw new Error(`File "${file.name}" is too large. Maximum size is 5MB.`);
+            }
+
+            // Read file as base64
+            const base64Data = await this.readFileAsBase64(file);
+            
+            attachments.push({
+                id: this.generateAttachmentId(),
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                data: base64Data,
+                uploadedAt: new Date().toISOString()
+            });
+        }
+
+        return attachments;
+    }
+
+    // Read file as base64
+    readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => reject(new Error('Failed to read file'));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Generate unique attachment ID
+    generateAttachmentId() {
+        return Date.now().toString(36) + Math.random().toString(36).substring(2);
+    }
+
+    // Display current attachments in edit modal
+    displayCurrentAttachments(attachments) {
+        const container = document.getElementById('current-attachments');
+        if (!container) return;
+
+        if (!attachments || attachments.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = `
+            <div style="margin-top: 10px;">
+                <strong>Current Attachments:</strong>
+                <div style="margin-top: 5px;">
+                    ${attachments.map(att => `
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 5px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-bottom: 5px;">
+                            <span style="flex: 1;">📎 ${this.escapeHtml(att.name)} (${this.formatFileSize(att.size)})</span>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="taskManager.removeAttachment('${att.id}')" style="padding: 2px 8px; font-size: 12px;">Remove</button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Remove attachment from current task
+    removeAttachment(attachmentId) {
+        if (!this.currentEditId) return;
+
+        const task = storage.getTaskById(this.currentEditId);
+        if (!task) return;
+
+        task.attachments = (task.attachments || []).filter(att => att.id !== attachmentId);
+        storage.updateTask(this.currentEditId, task);
+        
+        this.displayCurrentAttachments(task.attachments);
+    }
+
+    // Format file size for display
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    // Download attachment
+    downloadAttachment(taskId, attachmentId) {
+        const task = storage.getTaskById(taskId);
+        if (!task) return;
+
+        const attachment = (task.attachments || []).find(att => att.id === attachmentId);
+        if (!attachment) return;
+
+        // Create download link
+        const link = document.createElement('a');
+        link.href = attachment.data;
+        link.download = attachment.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 }
 

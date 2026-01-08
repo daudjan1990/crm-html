@@ -234,6 +234,12 @@
                         <option value="completed">Completed</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="task-attachments">Attachments (PDF, Email files)</label>
+                    <input type="file" id="task-attachments" name="attachments" multiple accept=".pdf,.eml,.msg,.txt">
+                    <small style="color: #a0a5b0; display: block; margin-top: 5px;">You can select multiple files. Accepted formats: PDF, EML, MSG, TXT</small>
+                    <div id="current-attachments" style="margin-top: 10px;"></div>
+                </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Save</button>
                     <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
