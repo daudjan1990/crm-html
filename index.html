@@ -100,19 +100,16 @@
                 <div class="section-header">
                     <h2>Task Flowchart</h2>
                     <div class="action-buttons">
+                        <button id="flowchart-add-tasks-btn" class="btn btn-primary">+ Add Tasks</button>
                         <button id="flowchart-add-dependency-btn" class="btn btn-primary">Add Dependency</button>
                         <button id="flowchart-auto-arrange-btn" class="btn btn-primary">Auto Arrange</button>
                         <button id="flowchart-reset-view-btn" class="btn btn-secondary">Reset View</button>
-                        <button id="flowchart-clear-btn" class="btn btn-secondary">Clear All</button>
+                        <button id="flowchart-clear-btn" class="btn btn-secondary">Clear Board</button>
                         <button id="export-flowchart-pdf-btn" class="btn btn-secondary">Export PDF</button>
                     </div>
                 </div>
                 <div class="flowchart-info">
-                    <p><strong>💡 Controls:</strong> Drag tasks to move • Click arrows to remove dependencies • <kbd>Ctrl+Wheel</kbd> to zoom • <kbd>Shift+Drag</kbd> to pan • Middle-click to pan</p>
-                </div>
-                <div class="search-container">
-                    <input type="text" id="flowchart-filter-company" placeholder="Filter by company name..." class="search-input">
-                    <button id="flowchart-clear-filter" class="btn btn-secondary">Clear Filter</button>
+                    <p><strong>💡 Controls:</strong> Drag tasks to move • Click arrows to remove dependencies • <kbd>Ctrl+Wheel</kbd> to zoom • <kbd>Shift+Drag</kbd> to pan • Middle-click to pan • Click × on task to remove</p>
                 </div>
                 <div id="flowchart-canvas" class="flowchart-canvas">
                     <!-- Task boxes and dependencies will be rendered here -->
@@ -330,6 +327,26 @@
             </div>
             <div class="form-actions">
                 <button type="button" class="btn btn-primary" id="kanban-add-tasks-confirm-btn">Add Selected Tasks</button>
+                <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flowchart Add Tasks Modal -->
+    <div id="flowchart-add-tasks-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add Tasks to Flowchart</h2>
+            <div class="search-container">
+                <input type="text" id="flowchart-task-filter-company" placeholder="Filter by company name..." class="search-input">
+                <input type="text" id="flowchart-task-filter-company-number" placeholder="Filter by company number..." class="search-input">
+                <button id="flowchart-task-clear-filter" class="btn btn-secondary">Clear Filters</button>
+            </div>
+            <div id="flowchart-tasks-selection-container" class="pdf-selection-container">
+                <!-- Task checkboxes will be dynamically populated here -->
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-primary" id="flowchart-add-tasks-confirm-btn">Add Selected Tasks</button>
                 <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
             </div>
         </div>
