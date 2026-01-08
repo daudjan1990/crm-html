@@ -10,7 +10,7 @@ class TaskManager {
         this.searchDate = '';
         this.filterCustomerId = null;
         this.collapsedTasks = new Set(); // Track which tasks are collapsed
-        this.MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit per file
+        this.MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB limit per file (increased from 5MB)
         this.initialize();
     }
 
