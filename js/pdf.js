@@ -411,6 +411,31 @@ class PDFManager {
             html += `</div>`;
         }
 
+        // Add task attachments section with collapsible content
+        const tasksWithAttachments = tasks.filter(t => t.attachments && t.attachments.length > 0);
+        if (tasksWithAttachments.length > 0) {
+            html += `
+                <div class="print-section">
+                    <h2 class="print-section-title">Task Attachments</h2>
+            `;
+
+            tasksWithAttachments.forEach((task, taskIndex) => {
+                const customerName = customerMap[task.customerId] || 'Unknown';
+                html += `
+                    <div class="print-item">
+                        <div class="print-item-title">${this.escapeHtml(task.description)}</div>
+                        <div class="print-item-content">
+                            <div class="print-item-field"><strong>Customer:</strong> ${this.escapeHtml(customerName)}</div>
+                            <div class="print-item-field"><strong>Attachments:</strong> ${task.attachments.length} file(s)</div>
+                        </div>
+                        ${this.generateAttachmentContentHTML(task.attachments, task.id, taskIndex)}
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+        }
+
         html += `
                 <div class="print-footer">
                     CRM Application - Task Report
@@ -483,6 +508,7 @@ class PDFManager {
             customerTasks.forEach((task, index) => {
                 const priority = task.priority || 'medium';
                 const status = task.status || 'pending';
+                const globalTaskIndex = Object.keys(tasksByCustomer).slice(0, groupIndex).reduce((sum, k) => sum + tasksByCustomer[k].length, 0) + index;
                 html += `
                     <div class="print-item">
                         <div class="print-item-title">${this.escapeHtml(task.description)}</div>
@@ -492,7 +518,9 @@ class PDFManager {
                             <div class="print-item-field"><strong>Priority:</strong> <span class="print-badge print-badge-${priority}">${this.getPriorityLabel(priority)}</span></div>
                             <div class="print-item-field"><strong>Status:</strong> <span class="print-badge print-badge-${status}">${this.getStatusLabel(status)}</span></div>
                             ${task.notes ? `<div class="print-item-field"><strong>Notes:</strong> ${this.escapeHtml(task.notes)}</div>` : ''}
+                            ${task.attachments && task.attachments.length > 0 ? `<div class="print-item-field"><strong>Attachments:</strong> ${task.attachments.length} file(s)</div>` : ''}
                         </div>
+                        ${task.attachments && task.attachments.length > 0 ? this.generateAttachmentContentHTML(task.attachments, task.id, globalTaskIndex) : ''}
                     </div>
                 `;
             });
@@ -552,6 +580,209 @@ class PDFManager {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    // Generate HTML for attachment contents with collapsible sections
+    generateAttachmentContentHTML(attachments, taskId, taskIndex) {
+        if (!attachments || attachments.length === 0) {
+            return '';
+        }
+
+        let html = '<div class="print-attachments-section">';
+
+        attachments.forEach((attachment, attIndex) => {
+            const attachmentId = `attachment-${taskIndex}-${attIndex}`;
+            const isPDF = attachment.type === 'application/pdf' || attachment.name.toLowerCase().endsWith('.pdf');
+            const isEML = attachment.type === 'message/rfc822' || attachment.name.toLowerCase().endsWith('.eml');
+            
+            html += `
+                <div class="print-attachment-item">
+                    <div class="print-attachment-header" onclick="pdfManager.toggleAttachment('${attachmentId}')">
+                        <span class="print-attachment-toggle" id="${attachmentId}-toggle">▶</span>
+                        <span class="print-attachment-name">📎 ${this.escapeHtml(attachment.name)}</span>
+                        <span class="print-attachment-size">(${this.formatFileSize(attachment.size)})</span>
+                    </div>
+                    <div class="print-attachment-content" id="${attachmentId}-content" style="display: none;">
+            `;
+
+            if (isPDF) {
+                html += this.generatePDFContentHTML(attachment);
+            } else if (isEML) {
+                html += this.generateEMLContentHTML(attachment);
+            } else {
+                html += `<div class="print-attachment-message">Preview not available for this file type.</div>`;
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        return html;
+    }
+
+    // Generate HTML for PDF content (embedded PDF viewer)
+    generatePDFContentHTML(attachment) {
+        // For PDF files, we'll embed them as an iframe or object tag
+        // The data is already in base64 format from the attachment
+        return `
+            <div class="print-pdf-viewer">
+                <embed 
+                    src="${attachment.data}" 
+                    type="application/pdf" 
+                    width="100%" 
+                    height="600px"
+                    class="print-pdf-embed"
+                />
+                <div class="print-pdf-fallback">
+                    <p>If the PDF doesn't display, you can <a href="${attachment.data}" download="${this.escapeHtml(attachment.name)}" target="_blank">download it here</a>.</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // Generate HTML for EML content (parsed email display)
+    generateEMLContentHTML(attachment) {
+        try {
+            // Decode base64 data
+            const base64Data = attachment.data.split(',')[1]; // Remove data:type;base64, prefix
+            const decodedData = atob(base64Data);
+            
+            // Parse EML content
+            const emailData = this.parseEMLContent(decodedData);
+            
+            return `
+                <div class="print-email-viewer">
+                    <div class="print-email-header">
+                        <div class="print-email-field">
+                            <strong>From:</strong> ${this.escapeHtml(emailData.from || 'Unknown')}
+                        </div>
+                        <div class="print-email-field">
+                            <strong>To:</strong> ${this.escapeHtml(emailData.to || 'Unknown')}
+                        </div>
+                        ${emailData.cc ? `
+                        <div class="print-email-field">
+                            <strong>CC:</strong> ${this.escapeHtml(emailData.cc)}
+                        </div>
+                        ` : ''}
+                        <div class="print-email-field">
+                            <strong>Subject:</strong> ${this.escapeHtml(emailData.subject || 'No Subject')}
+                        </div>
+                        <div class="print-email-field">
+                            <strong>Date:</strong> ${this.escapeHtml(emailData.date || 'Unknown')}
+                        </div>
+                    </div>
+                    <div class="print-email-body">
+                        <strong>Message:</strong>
+                        <div class="print-email-content">
+                            ${this.escapeHtml(emailData.body || 'No content available')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            console.error('Error parsing EML content:', error);
+            return `
+                <div class="print-attachment-message">
+                    Unable to parse email content. The file may be corrupted or in an unsupported format.
+                </div>
+            `;
+        }
+    }
+
+    // Parse EML file content
+    parseEMLContent(emlText) {
+        const emailData = {
+            from: '',
+            to: '',
+            cc: '',
+            subject: '',
+            date: '',
+            body: ''
+        };
+
+        try {
+            const lines = emlText.split('\n');
+            let inBody = false;
+            let bodyLines = [];
+            let currentHeader = '';
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+
+                // Check for empty line indicating start of body
+                if (line.trim() === '' && !inBody) {
+                    inBody = true;
+                    continue;
+                }
+
+                if (!inBody) {
+                    // Parse headers
+                    if (line.match(/^From:/i)) {
+                        emailData.from = line.substring(5).trim();
+                        currentHeader = 'from';
+                    } else if (line.match(/^To:/i)) {
+                        emailData.to = line.substring(3).trim();
+                        currentHeader = 'to';
+                    } else if (line.match(/^Cc:/i)) {
+                        emailData.cc = line.substring(3).trim();
+                        currentHeader = 'cc';
+                    } else if (line.match(/^Subject:/i)) {
+                        emailData.subject = line.substring(8).trim();
+                        currentHeader = 'subject';
+                    } else if (line.match(/^Date:/i)) {
+                        emailData.date = line.substring(5).trim();
+                        currentHeader = 'date';
+                    } else if (line.match(/^\s/) && currentHeader) {
+                        // Continuation of previous header
+                        emailData[currentHeader] += ' ' + line.trim();
+                    }
+                } else {
+                    // Collect body lines
+                    bodyLines.push(line);
+                }
+            }
+
+            // Join body lines and clean up
+            emailData.body = bodyLines.join('\n').trim();
+
+            // Remove common email encoding markers
+            emailData.body = emailData.body.replace(/^Content-Type:.*$/gm, '');
+            emailData.body = emailData.body.replace(/^Content-Transfer-Encoding:.*$/gm, '');
+            emailData.body = emailData.body.trim();
+
+        } catch (error) {
+            console.error('Error parsing EML headers:', error);
+        }
+
+        return emailData;
+    }
+
+    // Format file size
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    // Toggle attachment content visibility
+    toggleAttachment(attachmentId) {
+        const content = document.getElementById(`${attachmentId}-content`);
+        const toggle = document.getElementById(`${attachmentId}-toggle`);
+        
+        if (content && toggle) {
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
     }
 }
 
