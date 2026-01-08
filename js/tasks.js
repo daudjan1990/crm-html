@@ -430,7 +430,7 @@ class TaskManager {
                                         <span class="attachment-icon">📎</span>
                                         <span class="attachment-name">${this.escapeHtml(att.name)}</span>
                                         <span class="attachment-size">(${this.formatFileSize(att.size)})</span>
-                                        <button class="btn btn-sm btn-secondary" onclick="taskManager.downloadAttachment('${task.id}', '${att.id}')">Download</button>
+                                        <button class="btn btn-sm btn-secondary" onclick="taskManager.downloadAttachment('${this.escapeHtml(task.id)}', '${this.escapeHtml(att.id)}')">Download</button>
                                     </div>
                                 `).join('')}
                             </div>
@@ -526,14 +526,18 @@ class TaskManager {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = (e) => reject(new Error('Failed to read file'));
+            reader.onerror = (e) => reject(new Error(`Failed to read file: ${file.name}`));
             reader.readAsDataURL(file);
         });
     }
 
     // Generate unique attachment ID
     generateAttachmentId() {
-        return Date.now().toString(36) + Math.random().toString(36).substring(2);
+        // Use crypto.randomUUID if available, otherwise fallback to timestamp + random
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return Date.now().toString(36) + '-' + Math.random().toString(36).substring(2) + '-' + Math.random().toString(36).substring(2);
     }
 
     // Display current attachments in edit modal
@@ -553,7 +557,7 @@ class TaskManager {
                     ${attachments.map(att => `
                         <div style="display: flex; align-items: center; gap: 10px; padding: 5px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-bottom: 5px;">
                             <span style="flex: 1;">📎 ${this.escapeHtml(att.name)} (${this.formatFileSize(att.size)})</span>
-                            <button type="button" class="btn btn-danger btn-sm" onclick="taskManager.removeAttachment('${att.id}')" style="padding: 2px 8px; font-size: 12px;">Remove</button>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="taskManager.removeAttachment('${this.escapeHtml(att.id)}')" style="padding: 2px 8px; font-size: 12px;">Remove</button>
                         </div>
                     `).join('')}
                 </div>
