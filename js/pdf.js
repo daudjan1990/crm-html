@@ -629,17 +629,27 @@ class PDFManager {
     generatePDFContentHTML(attachment) {
         // For PDF files, we'll embed them using an embed tag
         // The data is already in base64 format from the attachment
+        
+        // Validate data URL format to prevent XSS
+        if (!attachment.data || typeof attachment.data !== 'string') {
+            return '<div class="print-attachment-message">Invalid attachment data.</div>';
+        }
+        
+        if (!attachment.data.startsWith('data:application/pdf;base64,')) {
+            return '<div class="print-attachment-message">Invalid PDF data format.</div>';
+        }
+        
         return `
             <div class="print-pdf-viewer">
                 <embed 
-                    src="${attachment.data}" 
+                    src="${this.escapeHtml(attachment.data)}" 
                     type="application/pdf" 
                     width="100%" 
                     height="600px"
                     class="print-pdf-embed"
                 />
                 <div class="print-pdf-fallback">
-                    <p>If the PDF doesn't display, you can <a href="${attachment.data}" download="${this.escapeHtml(attachment.name)}" target="_blank">download it here</a>.</p>
+                    <p>If the PDF doesn't display, you can <a href="${this.escapeHtml(attachment.data)}" download="${this.escapeHtml(attachment.name)}" target="_blank">download it here</a>.</p>
                 </div>
             </div>
         `;
