@@ -4,11 +4,14 @@ class FlowchartManager {
     constructor() {
         this.canvas = null;
         this.dependencyModal = null;
+        this.addTasksModal = null;
         this.dependencies = [];
         this.taskPositions = {};
+        this.selectedTasks = new Set(); // Track which tasks are added to flowchart
         this.draggedTask = null;
         this.dragOffset = { x: 0, y: 0 };
         this.filterCompany = '';
+        this.filterCompanyNumber = '';
         this.zoom = 1;
         this.pan = { x: 0, y: 0 };
         this.isPanning = false;
@@ -29,10 +32,17 @@ class FlowchartManager {
         // Get canvas element
         this.canvas = document.getElementById('flowchart-canvas');
         this.dependencyModal = document.getElementById('dependency-modal');
+        this.addTasksModal = document.getElementById('flowchart-add-tasks-modal');
         
         if (!this.canvas) {
             console.error('Flowchart canvas not found');
             return;
+        }
+
+        // Add tasks button
+        const addTasksBtn = document.getElementById('flowchart-add-tasks-btn');
+        if (addTasksBtn) {
+            addTasksBtn.addEventListener('click', () => this.openAddTasksModal());
         }
 
         // Add dependency button
@@ -65,21 +75,57 @@ class FlowchartManager {
             resetViewBtn.addEventListener('click', () => this.resetView());
         }
 
-        // Filter functionality
-        const filterInput = document.getElementById('flowchart-filter-company');
-        if (filterInput) {
-            filterInput.addEventListener('input', (e) => {
-                this.filterCompany = e.target.value.toLowerCase();
-                this.renderFlowchart();
-            });
-        }
+        // Add tasks modal setup
+        if (this.addTasksModal) {
+            const closeBtn = this.addTasksModal.querySelector('.close');
+            const cancelBtn = this.addTasksModal.querySelector('.cancel-btn');
+            const confirmBtn = document.getElementById('flowchart-add-tasks-confirm-btn');
 
-        const clearFilterBtn = document.getElementById('flowchart-clear-filter');
-        if (clearFilterBtn) {
-            clearFilterBtn.addEventListener('click', () => {
-                this.filterCompany = '';
-                if (filterInput) filterInput.value = '';
-                this.renderFlowchart();
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => this.closeAddTasksModal());
+            }
+
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => this.closeAddTasksModal());
+            }
+
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', () => this.confirmAddTasks());
+            }
+
+            // Filter functionality
+            const filterCompany = document.getElementById('flowchart-task-filter-company');
+            const filterCompanyNumber = document.getElementById('flowchart-task-filter-company-number');
+            const clearFilterBtn = document.getElementById('flowchart-task-clear-filter');
+
+            if (filterCompany) {
+                filterCompany.addEventListener('input', (e) => {
+                    this.filterCompany = e.target.value.toLowerCase();
+                    this.renderTaskSelection();
+                });
+            }
+
+            if (filterCompanyNumber) {
+                filterCompanyNumber.addEventListener('input', (e) => {
+                    this.filterCompanyNumber = e.target.value.toLowerCase();
+                    this.renderTaskSelection();
+                });
+            }
+
+            if (clearFilterBtn) {
+                clearFilterBtn.addEventListener('click', () => {
+                    this.filterCompany = '';
+                    this.filterCompanyNumber = '';
+                    if (filterCompany) filterCompany.value = '';
+                    if (filterCompanyNumber) filterCompanyNumber.value = '';
+                    this.renderTaskSelection();
+                });
+            }
+
+            window.addEventListener('click', (e) => {
+                if (e.target === this.addTasksModal) {
+                    this.closeAddTasksModal();
+                }
             });
         }
 
@@ -179,6 +225,17 @@ class FlowchartManager {
                 this.taskPositions = {};
             }
         }
+
+        // Load selected tasks from localStorage
+        const savedSelectedTasks = localStorage.getItem('crm_flowchart_selected_tasks');
+        if (savedSelectedTasks) {
+            try {
+                this.selectedTasks = new Set(JSON.parse(savedSelectedTasks));
+            } catch (e) {
+                console.error('Error loading selected tasks:', e);
+                this.selectedTasks = new Set();
+            }
+        }
     }
 
     saveFlowchartData() {
@@ -186,6 +243,7 @@ class FlowchartManager {
         try {
             localStorage.setItem('crm_flowchart_dependencies', JSON.stringify(this.dependencies));
             localStorage.setItem('crm_flowchart_positions', JSON.stringify(this.taskPositions));
+            localStorage.setItem('crm_flowchart_selected_tasks', JSON.stringify(Array.from(this.selectedTasks)));
         } catch (e) {
             console.error('Error saving flowchart data:', e);
         }
@@ -206,7 +264,9 @@ class FlowchartManager {
     }
 
     autoArrangeTasks() {
-        const tasks = storage.getActiveCustomerTasks();
+        const allTasks = storage.getActiveCustomerTasks();
+        const tasks = allTasks.filter(task => this.selectedTasks.has(task.id));
+        
         if (tasks.length === 0) return;
 
         // Build dependency graph
@@ -290,7 +350,7 @@ class FlowchartManager {
     renderFlowchart() {
         if (!this.canvas) return;
 
-        let tasks = storage.getActiveCustomerTasks();
+        const allTasks = storage.getActiveCustomerTasks();
         const customers = storage.getCustomers();
 
         // Create customer lookup
@@ -299,18 +359,11 @@ class FlowchartManager {
             customerMap[c.id] = c.name;
         });
 
-        // Apply filter if set
-        if (this.filterCompany) {
-            tasks = tasks.filter(task => {
-                const customerName = customerMap[task.customerId] || '';
-                return customerName.toLowerCase().includes(this.filterCompany);
-            });
-        }
+        // Only show tasks that are selected for the flowchart
+        let tasks = allTasks.filter(task => this.selectedTasks.has(task.id));
 
         if (tasks.length === 0) {
-            const message = this.filterCompany 
-                ? 'No tasks found matching your filter.' 
-                : 'No tasks available. Add tasks in the Tasks tab to create a flowchart.';
+            const message = 'No tasks in flowchart. Click "Add Tasks" to select tasks to display.';
             this.canvas.innerHTML = `
                 <div class="flowchart-empty">
                     <div>
@@ -582,8 +635,16 @@ class FlowchartManager {
 
         if (!fromSelect || !toSelect) return;
 
-        const tasks = storage.getActiveCustomerTasks();
+        const allTasks = storage.getActiveCustomerTasks();
         const customers = storage.getCustomers();
+
+        // Only show tasks that are selected for the flowchart
+        const tasks = allTasks.filter(task => this.selectedTasks.has(task.id));
+
+        if (tasks.length === 0) {
+            alert('Please add tasks to the flowchart first before creating dependencies.');
+            return;
+        }
 
         // Create customer lookup
         const customerMap = {};
@@ -682,15 +743,20 @@ class FlowchartManager {
     }
 
     clearFlowchart() {
-        if (confirm('Are you sure you want to clear all dependencies? Task positions will be preserved.')) {
+        if (confirm('Are you sure you want to clear the flowchart? This will remove all tasks, dependencies, and positions.')) {
             this.dependencies = [];
+            this.selectedTasks.clear();
+            this.taskPositions = {};
             this.saveFlowchartData();
-            this.renderDependencyArrows();
+            this.renderFlowchart();
         }
     }
 
     removeTaskFromFlowchart(taskId) {
         if (confirm('Remove this task from the flowchart? This will also remove any dependencies involving this task.')) {
+            // Remove from selected tasks
+            this.selectedTasks.delete(taskId);
+            
             // Remove position
             delete this.taskPositions[taskId];
             
@@ -704,12 +770,136 @@ class FlowchartManager {
         }
     }
 
-    exportFlowchartToPDF() {
+    openAddTasksModal() {
+        this.filterCompany = '';
+        this.filterCompanyNumber = '';
+        
+        const filterCompany = document.getElementById('flowchart-task-filter-company');
+        const filterCompanyNumber = document.getElementById('flowchart-task-filter-company-number');
+        if (filterCompany) filterCompany.value = '';
+        if (filterCompanyNumber) filterCompanyNumber.value = '';
+        
+        this.renderTaskSelection();
+        this.addTasksModal.classList.add('active');
+    }
+
+    closeAddTasksModal() {
+        if (this.addTasksModal) {
+            this.addTasksModal.classList.remove('active');
+        }
+    }
+
+    renderTaskSelection() {
+        const container = document.getElementById('flowchart-tasks-selection-container');
+        if (!container) return;
+
         const tasks = storage.getActiveCustomerTasks();
         const customers = storage.getCustomers();
+        
+        // Create customer lookup
+        const customerMap = {};
+        customers.forEach(c => {
+            customerMap[c.id] = { name: c.name, companyNumber: c.companyNumber };
+        });
+
+        // Filter tasks - only show tasks not yet selected for flowchart
+        let availableTasks = tasks.filter(task => !this.selectedTasks.has(task.id));
+
+        // Apply company name filter
+        if (this.filterCompany) {
+            availableTasks = availableTasks.filter(task => {
+                const customer = customerMap[task.customerId];
+                return customer && customer.name.toLowerCase().includes(this.filterCompany);
+            });
+        }
+
+        // Apply company number filter
+        if (this.filterCompanyNumber) {
+            availableTasks = availableTasks.filter(task => {
+                const customer = customerMap[task.customerId];
+                return customer && customer.companyNumber && 
+                       customer.companyNumber.toLowerCase().includes(this.filterCompanyNumber);
+            });
+        }
+
+        if (availableTasks.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <div class="empty-state-text">
+                        ${this.filterCompany || this.filterCompanyNumber ? 
+                          'No tasks found matching your filters.' : 
+                          'All tasks are already in the flowchart.'}
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // Add select all/none buttons
+        let html = `
+            <div class="pdf-selection-actions">
+                <button class="btn btn-secondary" onclick="flowchartManager.selectAllTasks()">Select All</button>
+                <button class="btn btn-secondary" onclick="flowchartManager.selectNoneTasks()">Select None</button>
+            </div>
+        `;
+
+        // Build task selection list
+        html += availableTasks.map(task => {
+            const customer = customerMap[task.customerId];
+            const customerName = customer ? customer.name : 'Unknown';
+            const companyNumber = customer ? customer.companyNumber : '';
+            
+            return `
+                <div class="pdf-selection-item">
+                    <input type="checkbox" id="flowchart-task-${task.id}" value="${task.id}" checked>
+                    <label class="pdf-selection-label" for="flowchart-task-${task.id}">
+                        <strong>${this.escapeHtml(task.description)}</strong>
+                        <span class="pdf-selection-meta">${this.escapeHtml(customerName)} ${companyNumber ? `(${this.escapeHtml(companyNumber)})` : ''} - Due: ${this.formatDate(task.deadline)}</span>
+                    </label>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = html;
+    }
+
+    selectAllTasks() {
+        const checkboxes = document.querySelectorAll('#flowchart-tasks-selection-container input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = true);
+    }
+
+    selectNoneTasks() {
+        const checkboxes = document.querySelectorAll('#flowchart-tasks-selection-container input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    }
+
+    confirmAddTasks() {
+        const checkboxes = document.querySelectorAll('#flowchart-tasks-selection-container input[type="checkbox"]:checked');
+        const taskIds = Array.from(checkboxes).map(cb => cb.value);
+        
+        if (taskIds.length === 0) {
+            alert('Please select at least one task');
+            return;
+        }
+
+        // Add selected tasks to the flowchart
+        taskIds.forEach(id => this.selectedTasks.add(id));
+        
+        this.saveFlowchartData();
+        this.closeAddTasksModal();
+        this.renderFlowchart();
+    }
+
+    exportFlowchartToPDF() {
+        const allTasks = storage.getActiveCustomerTasks();
+        const customers = storage.getCustomers();
+
+        // Only export tasks that are selected for the flowchart
+        const tasks = allTasks.filter(task => this.selectedTasks.has(task.id));
 
         if (tasks.length === 0) {
-            alert('No tasks to export');
+            alert('No tasks in flowchart to export. Please add tasks first.');
             return;
         }
 
@@ -733,14 +923,8 @@ class FlowchartManager {
             taskMap[t.id] = t;
         });
 
-        // Apply filter if needed
+        // Use all provided tasks (already filtered by selected tasks)
         let filteredTasks = tasks;
-        if (this.filterCompany) {
-            filteredTasks = tasks.filter(task => {
-                const customerName = customerMap[task.customerId] || '';
-                return customerName.toLowerCase().includes(this.filterCompany);
-            });
-        }
 
         // Get only dependencies for filtered tasks
         const taskIds = new Set(filteredTasks.map(t => t.id));
