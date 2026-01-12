@@ -38,6 +38,7 @@
                 <button class="tab-button" data-tab="finished-projects">Finished Projects</button>
                 <button class="tab-button" data-tab="flowchart">Flowchart</button>
                 <button class="tab-button" data-tab="kanban">Kanban Board</button>
+                <button class="tab-button" data-tab="project-plan">Project Plan</button>
             </nav>
         </header>
 
@@ -132,6 +133,44 @@
                 </div>
                 <div id="kanban-board" class="kanban-board">
                     <!-- Kanban columns and cards will be rendered here -->
+                </div>
+            </section>
+
+            <!-- Project Plan Tab -->
+            <section id="project-plan-tab" class="tab-content">
+                <div class="section-header">
+                    <h2>Project Plan Timeline</h2>
+                    <div class="action-buttons">
+                        <button id="project-plan-add-tasks-btn" class="btn btn-primary">+ Add Tasks</button>
+                        <button id="project-plan-auto-schedule-btn" class="btn btn-primary">Auto Schedule</button>
+                        <button id="project-plan-reset-view-btn" class="btn btn-secondary">Reset View</button>
+                        <button id="project-plan-clear-btn" class="btn btn-secondary">Clear Plan</button>
+                        <button id="export-project-plan-pdf-btn" class="btn btn-secondary">Export PDF</button>
+                    </div>
+                </div>
+                <div class="project-plan-info">
+                    <p><strong>💡 Controls:</strong> Drag tasks to adjust timeline • Drag edges to resize duration • <kbd>Ctrl+Wheel</kbd> to zoom • <kbd>Shift+Drag</kbd> to pan • Click × on task to remove</p>
+                </div>
+                <div class="project-plan-controls">
+                    <label>
+                        View:
+                        <select id="project-plan-view-mode">
+                            <option value="days">Days</option>
+                            <option value="weeks" selected>Weeks</option>
+                            <option value="months">Months</option>
+                        </select>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="project-plan-show-today" checked>
+                        Show Today Line
+                    </label>
+                    <label>
+                        <input type="checkbox" id="project-plan-show-weekends">
+                        Highlight Weekends
+                    </label>
+                </div>
+                <div id="project-plan-canvas" class="project-plan-canvas">
+                    <!-- Timeline and task bars will be rendered here -->
                 </div>
             </section>
         </main>
@@ -358,6 +397,26 @@
         </div>
     </div>
 
+    <!-- Project Plan Add Tasks Modal -->
+    <div id="project-plan-add-tasks-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add Tasks to Project Plan</h2>
+            <div class="search-container">
+                <input type="text" id="project-plan-task-filter-company" placeholder="Filter by company name..." class="search-input">
+                <input type="text" id="project-plan-task-filter-company-number" placeholder="Filter by company number..." class="search-input">
+                <button id="project-plan-task-clear-filter" class="btn btn-secondary">Clear Filters</button>
+            </div>
+            <div id="project-plan-tasks-selection-container" class="pdf-selection-container">
+                <!-- Task checkboxes will be dynamically populated here -->
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-primary" id="project-plan-add-tasks-confirm-btn">Add Selected Tasks</button>
+                <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Hidden file inputs for CSV import -->
     <input type="file" id="customer-csv-input" accept=".csv" style="display: none;">
     <input type="file" id="task-csv-input" accept=".csv" style="display: none;">
@@ -372,6 +431,7 @@
     <script src="js/finishedProjects.js"></script>
     <script src="js/flowchart.js"></script>
     <script src="js/kanban.js"></script>
+    <script src="js/projectplan.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
