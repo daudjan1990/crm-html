@@ -1685,3 +1685,261 @@ body.print-preview-open {
     }
 }
 
+/* Project Plan Timeline Styles */
+.project-plan-controls {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: rgba(26, 35, 50, 0.5);
+    border-radius: 6px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.project-plan-controls label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e4e6eb;
+    font-size: 14px;
+}
+
+.project-plan-controls select {
+    padding: 5px 10px;
+    background-color: #1a2332;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 4px;
+    color: #e4e6eb;
+    cursor: pointer;
+}
+
+.project-plan-controls input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.project-plan-canvas {
+    background-color: #0f1419;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    min-height: 500px;
+    overflow: auto;
+    position: relative;
+    cursor: default;
+}
+
+.project-plan-content {
+    position: relative;
+    transform-origin: top left;
+    transition: transform 0.1s ease-out;
+    min-width: 100%;
+    padding: 20px;
+}
+
+.project-plan-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    text-align: center;
+    color: #a0a5b0;
+    font-size: 16px;
+}
+
+.timeline-header {
+    display: flex;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.4);
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+}
+
+.timeline-name-column {
+    width: 200px;
+    min-width: 200px;
+    padding: 10px;
+    font-weight: bold;
+    color: #d4af37;
+    border-right: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.timeline-scale {
+    position: relative;
+    height: 40px;
+    background: repeating-linear-gradient(
+        to right,
+        transparent,
+        transparent 19px,
+        rgba(212, 175, 55, 0.1) 19px,
+        rgba(212, 175, 55, 0.1) 20px
+    );
+}
+
+.timeline-date-marker {
+    position: absolute;
+    top: 0;
+    font-size: 11px;
+    color: #a0a5b0;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    padding-top: 5px;
+}
+
+.timeline-date-marker.major {
+    font-weight: bold;
+    color: #d4af37;
+    font-size: 12px;
+}
+
+.timeline-row {
+    display: flex;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+    min-height: 60px;
+    position: relative;
+}
+
+.timeline-row.even {
+    background-color: rgba(26, 35, 50, 0.3);
+}
+
+.timeline-row:hover {
+    background-color: rgba(212, 175, 55, 0.05);
+}
+
+.timeline-task-name {
+    padding: 8px 0;
+}
+
+.timeline-area {
+    position: relative;
+    flex: 1;
+    background: repeating-linear-gradient(
+        to right,
+        transparent,
+        transparent 19px,
+        rgba(212, 175, 55, 0.1) 19px,
+        rgba(212, 175, 55, 0.1) 20px
+    );
+}
+
+.timeline-weekend {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(212, 175, 55, 0.05);
+    pointer-events: none;
+}
+
+.timeline-task-bar {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    cursor: move;
+    transition: box-shadow 0.2s;
+    border: 2px solid transparent;
+    min-width: 40px;
+}
+
+.timeline-task-bar:hover {
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+    border-color: rgba(212, 175, 55, 0.5);
+    z-index: 10;
+}
+
+.timeline-task-bar.status-pending {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+}
+
+.timeline-task-bar.status-in-progress {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+}
+
+.timeline-task-bar.status-completed {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+}
+
+.timeline-task-label {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 500;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.timeline-task-delete {
+    background: rgba(0, 0, 0, 0.4);
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    width: 20px;
+    height: 20px;
+    font-size: 16px;
+    line-height: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 6px;
+    padding: 0;
+    transition: all 0.2s;
+}
+
+.timeline-task-delete:hover {
+    background: rgba(231, 76, 60, 0.9);
+    transform: scale(1.1);
+}
+
+.timeline-today-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e74c3c;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.timeline-today-line::before {
+    content: 'Today';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #e74c3c;
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* Responsive adjustments for project plan */
+@media (max-width: 768px) {
+    .project-plan-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .timeline-name-column {
+        width: 150px;
+        min-width: 150px;
+        font-size: 12px;
+    }
+    
+    .timeline-task-label {
+        font-size: 11px;
+    }
+}
+
+

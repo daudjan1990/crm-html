@@ -67,6 +67,11 @@ class CRMApp {
             if (tabName === 'kanban' && window.kanbanManager) {
                 window.kanbanManager.renderKanban();
             }
+
+            // Re-render project plan when switching to project plan tab
+            if (tabName === 'project-plan' && window.projectPlanManager) {
+                window.projectPlanManager.renderProjectPlan();
+            }
         }
     }
 
