@@ -776,9 +776,11 @@ class ProjectPlanManager {
         const minDate = new Date(Math.min(...allDates));
         const maxDate = new Date(Math.max(...allDates));
         
-        // Add some padding
-        minDate.setDate(minDate.getDate() - 7);
-        maxDate.setDate(maxDate.getDate() + 14);
+        // Add padding to timeline for better visualization
+        const TIMELINE_PADDING_BEFORE_DAYS = 7;
+        const TIMELINE_PADDING_AFTER_DAYS = 14;
+        minDate.setDate(minDate.getDate() - TIMELINE_PADDING_BEFORE_DAYS);
+        maxDate.setDate(maxDate.getDate() + TIMELINE_PADDING_AFTER_DAYS);
 
         // Generate HTML for print preview
         const html = this.generateProjectPlanHTML(tasks, customerMap, minDate, maxDate);
