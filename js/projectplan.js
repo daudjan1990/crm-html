@@ -746,8 +746,8 @@ class ProjectPlanManager {
 
         // Sort tasks by start date
         tasks.sort((a, b) => {
-            const aStart = this.taskTimelines[a.id]?.startDate || a.deadline;
-            const bStart = this.taskTimelines[b.id]?.startDate || b.deadline;
+            const aStart = this.taskTimelines[a.id]?.startDate || a.deadline || new Date().toISOString();
+            const bStart = this.taskTimelines[b.id]?.startDate || b.deadline || new Date().toISOString();
             return new Date(aStart) - new Date(bStart);
         });
 
@@ -755,12 +755,18 @@ class ProjectPlanManager {
         const allDates = [];
         tasks.forEach(task => {
             const timeline = this.taskTimelines[task.id];
-            if (timeline) {
+            if (timeline && timeline.startDate && timeline.endDate) {
                 allDates.push(new Date(timeline.startDate));
                 allDates.push(new Date(timeline.endDate));
             }
         });
         allDates.push(new Date()); // Include today
+
+        // Ensure we have valid dates
+        if (allDates.length === 0) {
+            allDates.push(new Date());
+            allDates.push(new Date());
+        }
 
         const minDate = new Date(Math.min(...allDates));
         const maxDate = new Date(Math.max(...allDates));
@@ -791,6 +797,7 @@ class ProjectPlanManager {
         });
 
         const pixelsPerDay = 15; // Optimized for print
+        const DATE_MARKER_INTERVAL_DAYS = 7; // Show date markers every week
         const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -814,7 +821,7 @@ class ProjectPlanManager {
                 `;
             }
             
-            currentDate.setDate(currentDate.getDate() + 7);
+            currentDate.setDate(currentDate.getDate() + DATE_MARKER_INTERVAL_DAYS);
         }
         
         timelineHeaderHTML += '</div></div>';
