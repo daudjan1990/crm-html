@@ -745,9 +745,11 @@ class ProjectPlanManager {
         }
 
         // Sort tasks by start date
+        const today = new Date();
+        const defaultSortDate = today.toISOString(); // Fixed reference for consistent sorting
         tasks.sort((a, b) => {
-            const aStart = this.taskTimelines[a.id]?.startDate || a.deadline || new Date().toISOString();
-            const bStart = this.taskTimelines[b.id]?.startDate || b.deadline || new Date().toISOString();
+            const aStart = this.taskTimelines[a.id]?.startDate || a.deadline || defaultSortDate;
+            const bStart = this.taskTimelines[b.id]?.startDate || b.deadline || defaultSortDate;
             return new Date(aStart) - new Date(bStart);
         });
 
@@ -760,15 +762,15 @@ class ProjectPlanManager {
                 allDates.push(new Date(timeline.endDate));
             }
         });
-        allDates.push(new Date()); // Include today
-
+        
         // Ensure we have valid dates - use a 30-day range as fallback
         if (allDates.length === 0) {
-            const today = new Date();
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 30);
             allDates.push(today);
             allDates.push(futureDate);
+        } else {
+            allDates.push(today); // Include today for reference
         }
 
         const minDate = new Date(Math.min(...allDates));
@@ -791,7 +793,7 @@ class ProjectPlanManager {
 
     generateProjectPlanHTML(tasks, customerMap, minDate, maxDate) {
         const now = new Date();
-        const dateStr = now.toLocaleDateString('en-US', { 
+        const dateStr = now.toLocaleString('en-US', { 
             year: 'numeric', 
             month: 'long', 
             day: 'numeric',

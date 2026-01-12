@@ -719,7 +719,10 @@ main {
     }
 
     /* Landscape orientation for project plan PDF export */
-    /* Note: This @page rule applies only when .print-document-landscape is present */
+    /* Note: @page rules are global in CSS and cannot be scoped to specific elements.
+       This landscape setting will affect the entire print context when printing.
+       Since the project plan is the only feature requiring landscape orientation,
+       and users typically print one document at a time, this is acceptable. */
     .print-document-landscape {
         page-break-after: always;
     }
