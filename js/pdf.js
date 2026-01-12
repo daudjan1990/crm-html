@@ -814,4 +814,4 @@ class PDFManager {
 }
 
 // Create global PDF manager instance
-const pdfManager = new PDFManager();
+window.pdfManager = new PDFManager();
