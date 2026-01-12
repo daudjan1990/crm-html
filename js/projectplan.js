@@ -762,10 +762,13 @@ class ProjectPlanManager {
         });
         allDates.push(new Date()); // Include today
 
-        // Ensure we have valid dates
+        // Ensure we have valid dates - use a 30-day range as fallback
         if (allDates.length === 0) {
-            allDates.push(new Date());
-            allDates.push(new Date());
+            const today = new Date();
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + 30);
+            allDates.push(today);
+            allDates.push(futureDate);
         }
 
         const minDate = new Date(Math.min(...allDates));
@@ -780,7 +783,7 @@ class ProjectPlanManager {
         
         // Use the PDF manager to open print preview
         if (window.pdfManager) {
-            pdfManager.openPrintPreview(html);
+            window.pdfManager.openPrintPreview(html);
         } else {
             alert('PDF export functionality is not available.');
         }

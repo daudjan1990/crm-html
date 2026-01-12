@@ -718,7 +718,8 @@ main {
         page-break-after: auto;
     }
 
-    /* Landscape orientation for project plan */
+    /* Landscape orientation for project plan PDF export */
+    /* Note: This @page rule applies only when .print-document-landscape is present */
     .print-document-landscape {
         page-break-after: always;
     }
