@@ -727,7 +727,177 @@ class ProjectPlanManager {
     }
 
     exportProjectPlanToPDF() {
-        alert('PDF export for project plan is not yet implemented. This feature will be added in a future update.');
+        const allTasks = storage.getActiveCustomerTasks();
+        const customers = storage.getCustomers();
+
+        // Create customer lookup
+        const customerMap = {};
+        customers.forEach(c => {
+            customerMap[c.id] = c.name;
+        });
+
+        // Only export tasks that are selected for the project plan
+        let tasks = allTasks.filter(task => this.selectedTasks.has(task.id));
+
+        if (tasks.length === 0) {
+            alert('No tasks in project plan. Add tasks first.');
+            return;
+        }
+
+        // Sort tasks by start date
+        tasks.sort((a, b) => {
+            const aStart = this.taskTimelines[a.id]?.startDate || a.deadline;
+            const bStart = this.taskTimelines[b.id]?.startDate || b.deadline;
+            return new Date(aStart) - new Date(bStart);
+        });
+
+        // Calculate date range
+        const allDates = [];
+        tasks.forEach(task => {
+            const timeline = this.taskTimelines[task.id];
+            if (timeline) {
+                allDates.push(new Date(timeline.startDate));
+                allDates.push(new Date(timeline.endDate));
+            }
+        });
+        allDates.push(new Date()); // Include today
+
+        const minDate = new Date(Math.min(...allDates));
+        const maxDate = new Date(Math.max(...allDates));
+        
+        // Add some padding
+        minDate.setDate(minDate.getDate() - 7);
+        maxDate.setDate(maxDate.getDate() + 14);
+
+        // Generate HTML for print preview
+        const html = this.generateProjectPlanHTML(tasks, customerMap, minDate, maxDate);
+        
+        // Use the PDF manager to open print preview
+        if (window.pdfManager) {
+            pdfManager.openPrintPreview(html);
+        } else {
+            alert('PDF export functionality is not available.');
+        }
+    }
+
+    generateProjectPlanHTML(tasks, customerMap, minDate, maxDate) {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        const pixelsPerDay = 15; // Optimized for print
+        const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Build timeline header
+        let timelineHeaderHTML = '<div class="print-timeline-header-row">';
+        timelineHeaderHTML += '<div class="print-timeline-task-column">Task / Customer</div>';
+        timelineHeaderHTML += '<div class="print-timeline-dates-column">';
+        
+        // Generate date markers
+        const currentDate = new Date(minDate);
+        while (currentDate <= maxDate) {
+            const daysSinceStart = Math.floor((currentDate - minDate) / (1000 * 60 * 60 * 24));
+            const isMonthStart = currentDate.getDate() === 1;
+            
+            if (isMonthStart || daysSinceStart === 0) {
+                timelineHeaderHTML += `
+                    <div class="print-timeline-date-marker" style="left: ${daysSinceStart * pixelsPerDay}px;">
+                        ${currentDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}
+                    </div>
+                `;
+            }
+            
+            currentDate.setDate(currentDate.getDate() + 7);
+        }
+        
+        timelineHeaderHTML += '</div></div>';
+
+        // Build task rows
+        let taskRowsHTML = '';
+        tasks.forEach((task, index) => {
+            const customerName = customerMap[task.customerId] || 'Unknown';
+            const timeline = this.taskTimelines[task.id];
+            
+            if (!timeline) return;
+            
+            const startDate = new Date(timeline.startDate);
+            const endDate = new Date(timeline.endDate);
+            const startDays = Math.floor((startDate - minDate) / (1000 * 60 * 60 * 24));
+            const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+            
+            const statusClass = task.status || 'pending';
+            const statusLabel = this.getStatusLabel(task.status || 'pending');
+            
+            taskRowsHTML += `
+                <div class="print-timeline-row ${index % 2 === 0 ? 'even' : ''}">
+                    <div class="print-timeline-task-column">
+                        <div class="print-timeline-task-name">${this.escapeHtml(task.description)}</div>
+                        <div class="print-timeline-customer-name">${this.escapeHtml(customerName)}</div>
+                        <div class="print-timeline-task-meta">
+                            ${this.formatDate(timeline.startDate)} - ${this.formatDate(timeline.endDate)}
+                        </div>
+                    </div>
+                    <div class="print-timeline-dates-column">
+                        <div class="print-timeline-bar print-timeline-bar-${statusClass}" 
+                             style="left: ${startDays * pixelsPerDay}px; width: ${duration * pixelsPerDay}px;">
+                            <span class="print-timeline-bar-label">${statusLabel}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Calculate today line position if in range
+        let todayLineHTML = '';
+        if (today >= minDate && today <= maxDate) {
+            const daysSinceStart = Math.floor((today - minDate) / (1000 * 60 * 60 * 24));
+            todayLineHTML = `
+                <div class="print-timeline-today-line" style="left: ${daysSinceStart * pixelsPerDay}px;">
+                    <div class="print-timeline-today-label">Today</div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="print-document print-document-landscape">
+                <div class="print-header">
+                    <h1 class="print-title">Project Plan Timeline</h1>
+                    <div class="print-meta">
+                        Generated: ${this.escapeHtml(dateStr)} | 
+                        Total Tasks: ${tasks.length} | 
+                        Timeline: ${this.formatDate(minDate.toISOString())} - ${this.formatDate(maxDate.toISOString())}
+                    </div>
+                </div>
+                
+                <div class="print-timeline-container" style="width: ${totalDays * pixelsPerDay + 250}px;">
+                    ${timelineHeaderHTML}
+                    <div class="print-timeline-body">
+                        ${taskRowsHTML}
+                        ${todayLineHTML}
+                    </div>
+                </div>
+                
+                <div class="print-footer">
+                    CRM Application - Project Plan Timeline
+                </div>
+            </div>
+        `;
+    }
+
+    getStatusLabel(status) {
+        const statusMap = {
+            'pending': 'Pending',
+            'in-progress': 'In Progress',
+            'completed': 'Completed'
+        };
+        return statusMap[status] || status;
     }
 
     escapeHtml(text) {

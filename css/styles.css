@@ -717,6 +717,21 @@ main {
     .print-section {
         page-break-after: auto;
     }
+
+    /* Landscape orientation for project plan */
+    .print-document-landscape {
+        page-break-after: always;
+    }
+
+    @page {
+        size: landscape;
+        margin: 10mm;
+    }
+
+    /* Make sure timeline prints in landscape */
+    .print-timeline-container {
+        page-break-inside: avoid;
+    }
 }
 
 /* Print Document Styles */
@@ -1941,5 +1956,187 @@ body.print-preview-open {
         font-size: 11px;
     }
 }
+
+/* Print Timeline Styles - Landscape PDF Export */
+.print-document-landscape {
+    font-family: Arial, sans-serif;
+    color: #000;
+    line-height: 1.4;
+    font-size: 11px;
+}
+
+.print-timeline-container {
+    position: relative;
+    overflow: visible;
+    margin: 20px 0;
+}
+
+.print-timeline-header-row {
+    display: flex;
+    border-bottom: 2px solid #1e3a8a;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+    font-weight: bold;
+    background-color: #f5f5f5;
+}
+
+.print-timeline-task-column {
+    width: 250px;
+    min-width: 250px;
+    padding: 8px;
+    border-right: 1px solid #ddd;
+}
+
+.print-timeline-dates-column {
+    position: relative;
+    flex: 1;
+    min-height: 30px;
+    background: repeating-linear-gradient(
+        to right,
+        transparent,
+        transparent 14px,
+        #f0f0f0 14px,
+        #f0f0f0 15px
+    );
+}
+
+.print-timeline-date-marker {
+    position: absolute;
+    top: 0;
+    font-size: 9px;
+    color: #666;
+    font-weight: bold;
+    white-space: nowrap;
+    padding: 2px 4px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.print-timeline-body {
+    position: relative;
+}
+
+.print-timeline-row {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    min-height: 50px;
+    position: relative;
+}
+
+.print-timeline-row.even {
+    background-color: #fafafa;
+}
+
+.print-timeline-task-name {
+    font-weight: bold;
+    font-size: 11px;
+    color: #000;
+    margin-bottom: 3px;
+}
+
+.print-timeline-customer-name {
+    font-size: 10px;
+    color: #555;
+    margin-bottom: 2px;
+}
+
+.print-timeline-task-meta {
+    font-size: 9px;
+    color: #888;
+}
+
+.print-timeline-bar {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    min-width: 30px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.print-timeline-bar-pending {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+}
+
+.print-timeline-bar-in-progress {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+}
+
+.print-timeline-bar-completed {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+}
+
+.print-timeline-bar-label {
+    font-size: 9px;
+    font-weight: bold;
+    color: #ffffff;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.print-timeline-today-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e74c3c;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.print-timeline-today-label {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #e74c3c;
+    color: #ffffff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* Legend for print */
+.print-timeline-legend {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 10px;
+}
+
+.print-timeline-legend-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.print-timeline-legend-items {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.print-timeline-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.print-timeline-legend-color {
+    width: 20px;
+    height: 12px;
+    border-radius: 2px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
 
 
