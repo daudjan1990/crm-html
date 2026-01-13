@@ -573,7 +573,7 @@ class EisenhowerManager {
 
         // Use PDF manager to generate
         if (window.pdfManager) {
-            window.pdfManager.generatePrintPreview(html, 'Eisenhower Matrix');
+            window.pdfManager.openPrintPreview(html);
         } else {
             alert('PDF manager not available');
         }
