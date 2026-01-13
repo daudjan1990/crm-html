@@ -72,6 +72,11 @@ class CRMApp {
             if (tabName === 'project-plan' && window.projectPlanManager) {
                 window.projectPlanManager.renderProjectPlan();
             }
+
+            // Re-render Eisenhower Matrix when switching to eisenhower tab
+            if (tabName === 'eisenhower' && window.eisenhowerManager) {
+                window.eisenhowerManager.renderMatrix();
+            }
         }
     }
 
