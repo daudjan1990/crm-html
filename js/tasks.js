@@ -312,10 +312,10 @@ class TaskManager {
         
         if (!container) return;
 
-        // Create customer lookup
+        // Create customer lookup with full customer objects
         const customerMap = {};
         customers.forEach(c => {
-            customerMap[c.id] = c.name;
+            customerMap[c.id] = c;
         });
 
         // Apply filters
@@ -329,7 +329,8 @@ class TaskManager {
         // Filter by company name
         if (this.searchCompany) {
             filteredTasks = filteredTasks.filter(task => {
-                const customerName = customerMap[task.customerId] || '';
+                const customer = customerMap[task.customerId];
+                const customerName = customer ? customer.name : '';
                 return customerName.toLowerCase().includes(this.searchCompany);
             });
         }
@@ -360,83 +361,128 @@ class TaskManager {
             return;
         }
 
-        // Sort tasks by priority (high > medium > low) then by deadline
-        const PRIORITY_ORDER = { 'high': 3, 'medium': 2, 'low': 1 };
-        const DEFAULT_PRIORITY = 2;
-        filteredTasks.sort((a, b) => {
-            const priorityDiff = (PRIORITY_ORDER[b.priority] || DEFAULT_PRIORITY) - (PRIORITY_ORDER[a.priority] || DEFAULT_PRIORITY);
-            if (priorityDiff !== 0) return priorityDiff;
-            return new Date(a.deadline) - new Date(b.deadline);
+        // Group tasks by customer
+        const tasksByCustomer = {};
+        filteredTasks.forEach(task => {
+            if (!tasksByCustomer[task.customerId]) {
+                tasksByCustomer[task.customerId] = [];
+            }
+            tasksByCustomer[task.customerId].push(task);
         });
 
-        container.innerHTML = filteredTasks.map(task => {
-            const customerName = customerMap[task.customerId] || 'Unknown Customer';
-            const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'completed';
-            const priority = task.priority || 'medium';
-            const isCollapsed = this.collapsedTasks.has(task.id);
-            const toggleIcon = isCollapsed ? '▶' : '▼';
+        // Sort tasks within each customer group by priority then deadline
+        const PRIORITY_ORDER = { 'high': 3, 'medium': 2, 'low': 1 };
+        const DEFAULT_PRIORITY = 2;
+        Object.keys(tasksByCustomer).forEach(customerId => {
+            tasksByCustomer[customerId].sort((a, b) => {
+                const priorityDiff = (PRIORITY_ORDER[b.priority] || DEFAULT_PRIORITY) - (PRIORITY_ORDER[a.priority] || DEFAULT_PRIORITY);
+                if (priorityDiff !== 0) return priorityDiff;
+                return new Date(a.deadline) - new Date(b.deadline);
+            });
+        });
+
+        // Sort customer IDs by company number or name
+        const sortedCustomerIds = Object.keys(tasksByCustomer).sort((a, b) => {
+            const customerA = customerMap[a] || {};
+            const customerB = customerMap[b] || {};
+            const companyNumA = customerA.companyNumber || '';
+            const companyNumB = customerB.companyNumber || '';
             
-            return `
-                <div class="data-item" style="${isOverdue ? 'border-left-color: #e74c3c;' : ''}">
-                    <div class="data-item-header">
-                        <div class="data-item-title">
-                            <button class="task-toggle-btn" onclick="taskManager.toggleTask('${task.id}')" title="${isCollapsed ? 'Expand' : 'Collapse'} task">
-                                ${toggleIcon}
-                            </button>
-                            ${this.escapeHtml(task.description)}
-                            ${isOverdue ? '<span style="color: #e74c3c; font-size: 14px; margin-left: 10px;">⚠ OVERDUE</span>' : ''}
+            // Sort by company number first, then by name
+            if (companyNumA && companyNumB) {
+                return companyNumA.localeCompare(companyNumB);
+            } else if (companyNumA) {
+                return -1;
+            } else if (companyNumB) {
+                return 1;
+            }
+            return (customerA.name || '').localeCompare(customerB.name || '');
+        });
+
+        // Render grouped tasks
+        container.innerHTML = sortedCustomerIds.map(customerId => {
+            const customer = customerMap[customerId] || {};
+            const customerName = customer.name || 'Unknown Customer';
+            const companyNumber = customer.companyNumber || 'N/A';
+            const customerTasks = tasksByCustomer[customerId];
+
+            const tasksHtml = customerTasks.map(task => {
+                const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'completed';
+                const priority = task.priority || 'medium';
+                const isCollapsed = this.collapsedTasks.has(task.id);
+                const toggleIcon = isCollapsed ? '▶' : '▼';
+                
+                return `
+                    <div class="data-item" style="${isOverdue ? 'border-left-color: #e74c3c;' : ''}">
+                        <div class="data-item-header">
+                            <div class="data-item-title">
+                                <button class="task-toggle-btn" onclick="taskManager.toggleTask('${task.id}')" title="${isCollapsed ? 'Expand' : 'Collapse'} task">
+                                    ${toggleIcon}
+                                </button>
+                                ${this.escapeHtml(task.description)}
+                                ${isOverdue ? '<span style="color: #e74c3c; font-size: 14px; margin-left: 10px;">⚠ OVERDUE</span>' : ''}
+                            </div>
+                            <div class="data-item-actions">
+                                <button class="btn btn-success" onclick="taskManager.openEditModal('${task.id}')">Edit</button>
+                                <button class="btn btn-danger" onclick="taskManager.deleteTask('${task.id}')">Delete</button>
+                            </div>
                         </div>
-                        <div class="data-item-actions">
-                            <button class="btn btn-success" onclick="taskManager.openEditModal('${task.id}')">Edit</button>
-                            <button class="btn btn-danger" onclick="taskManager.deleteTask('${task.id}')">Delete</button>
+                        <div class="data-item-content" style="${isCollapsed ? 'display: none;' : ''}">
+                            <div class="data-field">
+                                <div class="data-field-label">Deadline</div>
+                                <div class="data-field-value">${this.formatDate(task.deadline)}</div>
+                            </div>
+                            <div class="data-field">
+                                <div class="data-field-label">Responsible Person</div>
+                                <div class="data-field-value">${this.escapeHtml(task.responsible)}</div>
+                            </div>
+                            <div class="data-field">
+                                <div class="data-field-label">Priority</div>
+                                <div class="data-field-value">
+                                    <span class="priority-badge priority-${priority}">${this.getPriorityLabel(priority)}</span>
+                                </div>
+                            </div>
+                            <div class="data-field">
+                                <div class="data-field-label">Status</div>
+                                <div class="data-field-value">
+                                    <span class="status-badge status-${task.status}">${this.getStatusLabel(task.status)}</span>
+                                </div>
+                            </div>
+                            ${task.notes ? `
+                            <div class="data-field" style="grid-column: 1 / -1;">
+                                <div class="data-field-label">Notes</div>
+                                <div class="data-field-value">${this.escapeHtml(task.notes)}</div>
+                            </div>
+                            ` : ''}
+                            ${task.attachments && task.attachments.length > 0 ? `
+                            <div class="data-field" style="grid-column: 1 / -1;">
+                                <div class="data-field-label">Attachments (${task.attachments.length})</div>
+                                <div class="data-field-value">
+                                    ${task.attachments.map(att => `
+                                        <div class="attachment-item">
+                                            <span class="attachment-icon">📎</span>
+                                            <span class="attachment-name">${this.escapeHtml(att.name)}</span>
+                                            <span class="attachment-size">(${this.formatFileSize(att.size)})</span>
+                                            <button class="btn btn-sm btn-secondary" onclick="taskManager.downloadAttachment('${this.escapeHtml(task.id)}', '${this.escapeHtml(att.id)}')">Download</button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
-                    <div class="data-item-content" style="${isCollapsed ? 'display: none;' : ''}">
-                        <div class="data-field">
-                            <div class="data-field-label">Customer</div>
-                            <div class="data-field-value">${this.escapeHtml(customerName)}</div>
-                        </div>
-                        <div class="data-field">
-                            <div class="data-field-label">Deadline</div>
-                            <div class="data-field-value">${this.formatDate(task.deadline)}</div>
-                        </div>
-                        <div class="data-field">
-                            <div class="data-field-label">Responsible Person</div>
-                            <div class="data-field-value">${this.escapeHtml(task.responsible)}</div>
-                        </div>
-                        <div class="data-field">
-                            <div class="data-field-label">Priority</div>
-                            <div class="data-field-value">
-                                <span class="priority-badge priority-${priority}">${this.getPriorityLabel(priority)}</span>
-                            </div>
-                        </div>
-                        <div class="data-field">
-                            <div class="data-field-label">Status</div>
-                            <div class="data-field-value">
-                                <span class="status-badge status-${task.status}">${this.getStatusLabel(task.status)}</span>
-                            </div>
-                        </div>
-                        ${task.notes ? `
-                        <div class="data-field" style="grid-column: 1 / -1;">
-                            <div class="data-field-label">Notes</div>
-                            <div class="data-field-value">${this.escapeHtml(task.notes)}</div>
-                        </div>
-                        ` : ''}
-                        ${task.attachments && task.attachments.length > 0 ? `
-                        <div class="data-field" style="grid-column: 1 / -1;">
-                            <div class="data-field-label">Attachments (${task.attachments.length})</div>
-                            <div class="data-field-value">
-                                ${task.attachments.map(att => `
-                                    <div class="attachment-item">
-                                        <span class="attachment-icon">📎</span>
-                                        <span class="attachment-name">${this.escapeHtml(att.name)}</span>
-                                        <span class="attachment-size">(${this.formatFileSize(att.size)})</span>
-                                        <button class="btn btn-sm btn-secondary" onclick="taskManager.downloadAttachment('${this.escapeHtml(task.id)}', '${this.escapeHtml(att.id)}')">Download</button>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                        ` : ''}
+                `;
+            }).join('');
+
+            return `
+                <div class="company-group">
+                    <div class="company-header">
+                        <div class="company-number">${this.escapeHtml(companyNumber)}</div>
+                        <div class="company-name">${this.escapeHtml(customerName)}</div>
+                        <div class="company-task-count">${customerTasks.length} task${customerTasks.length !== 1 ? 's' : ''}</div>
+                    </div>
+                    <div class="company-tasks">
+                        ${tasksHtml}
                     </div>
                 </div>
             `;
