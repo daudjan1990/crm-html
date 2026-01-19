@@ -390,6 +390,13 @@ class TaskManager {
             
             // Sort by company number first, then by name
             if (companyNumA && companyNumB) {
+                // Try numeric comparison if both are numeric
+                const numA = parseFloat(companyNumA);
+                const numB = parseFloat(companyNumB);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+                // Fall back to string comparison for alphanumeric
                 return companyNumA.localeCompare(companyNumB);
             } else if (companyNumA) {
                 return -1;
@@ -403,7 +410,7 @@ class TaskManager {
         container.innerHTML = sortedCustomerIds.map(customerId => {
             const customer = customerMap[customerId] || {};
             const customerName = customer.name || 'Unknown Customer';
-            const companyNumber = customer.companyNumber || 'N/A';
+            const companyNumber = customer.companyNumber || 'No Number';
             const customerTasks = tasksByCustomer[customerId];
 
             const tasksHtml = customerTasks.map(task => {
