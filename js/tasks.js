@@ -128,11 +128,15 @@ class TaskManager {
             });
         }
 
-        // Update customer dropdown
-        this.updateCustomerDropdown();
-        
-        // Initial render
-        this.renderTasks();
+        // Wait for storage to be ready before initial render
+        storage.initPromise.then(() => {
+            this.updateCustomerDropdown();
+            this.renderTasks();
+        }).catch(err => {
+            console.error('Error waiting for storage initialization:', err);
+            this.updateCustomerDropdown(); // Update anyway to show empty state
+            this.renderTasks();
+        });
     }
 
     updateCustomerDropdown() {

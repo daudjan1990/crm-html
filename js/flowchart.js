@@ -199,8 +199,13 @@ class FlowchartManager {
         // Load saved data
         this.loadFlowchartData();
 
-        // Initial render
-        this.renderFlowchart();
+        // Wait for storage to be ready before initial render
+        storage.initPromise.then(() => {
+            this.renderFlowchart();
+        }).catch(err => {
+            console.error('Error waiting for storage initialization:', err);
+            this.renderFlowchart(); // Render anyway to show empty state
+        });
     }
 
     loadFlowchartData() {

@@ -99,8 +99,13 @@ class CustomerManager {
             addContactBtn.addEventListener('click', () => this.addContactPersonField());
         }
 
-        // Initial render
-        this.renderCustomers();
+        // Wait for storage to be ready before initial render
+        storage.initPromise.then(() => {
+            this.renderCustomers();
+        }).catch(err => {
+            console.error('Error waiting for storage initialization:', err);
+            this.renderCustomers(); // Render anyway to show empty state
+        });
     }
 
     openAddModal() {

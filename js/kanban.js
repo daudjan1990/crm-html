@@ -143,8 +143,13 @@ class KanbanManager {
         // Load saved data
         this.loadKanbanData();
 
-        // Initial render
-        this.renderKanban();
+        // Wait for storage to be ready before initial render
+        storage.initPromise.then(() => {
+            this.renderKanban();
+        }).catch(err => {
+            console.error('Error waiting for storage initialization:', err);
+            this.renderKanban(); // Render anyway to show empty state
+        });
     }
 
     loadKanbanData() {
