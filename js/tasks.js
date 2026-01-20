@@ -6,10 +6,12 @@ class TaskManager {
         this.form = null;
         this.currentEditId = null;
         this.searchCompany = '';
+        this.searchCompanyNumber = '';
         this.searchResponsible = '';
         this.searchDate = '';
         this.filterCustomerId = null;
         this.collapsedTasks = new Set(); // Track which tasks are collapsed
+        this.collapsedCompanies = new Set(); // Track which company groups are collapsed
         this.MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB limit per file (increased from 5MB)
         this.initialize();
     }
@@ -90,6 +92,7 @@ class TaskManager {
 
         // Search functionality
         const searchCompanyInput = document.getElementById('task-search-company');
+        const searchCompanyNumberInput = document.getElementById('task-search-company-number');
         const searchResponsibleInput = document.getElementById('task-search-responsible');
         const searchDateInput = document.getElementById('task-search-date');
         const clearFiltersBtn = document.getElementById('clear-task-filters');
@@ -97,6 +100,13 @@ class TaskManager {
         if (searchCompanyInput) {
             searchCompanyInput.addEventListener('input', (e) => {
                 this.searchCompany = e.target.value.toLowerCase();
+                this.renderTasks();
+            });
+        }
+
+        if (searchCompanyNumberInput) {
+            searchCompanyNumberInput.addEventListener('input', (e) => {
+                this.searchCompanyNumber = e.target.value.toLowerCase();
                 this.renderTasks();
             });
         }
@@ -118,10 +128,12 @@ class TaskManager {
         if (clearFiltersBtn) {
             clearFiltersBtn.addEventListener('click', () => {
                 this.searchCompany = '';
+                this.searchCompanyNumber = '';
                 this.searchResponsible = '';
                 this.searchDate = '';
                 this.filterCustomerId = null;
                 if (searchCompanyInput) searchCompanyInput.value = '';
+                if (searchCompanyNumberInput) searchCompanyNumberInput.value = '';
                 if (searchResponsibleInput) searchResponsibleInput.value = '';
                 if (searchDateInput) searchDateInput.value = '';
                 this.renderTasks();
@@ -309,6 +321,15 @@ class TaskManager {
         this.renderTasks();
     }
 
+    toggleCompany(customerId) {
+        if (this.collapsedCompanies.has(customerId)) {
+            this.collapsedCompanies.delete(customerId);
+        } else {
+            this.collapsedCompanies.add(customerId);
+        }
+        this.renderTasks();
+    }
+
     renderTasks() {
         const tasks = storage.getActiveCustomerTasks(); // Only get tasks for non-finished customers
         const customers = storage.getCustomers();
@@ -339,6 +360,15 @@ class TaskManager {
             });
         }
         
+        // Filter by company number
+        if (this.searchCompanyNumber) {
+            filteredTasks = filteredTasks.filter(task => {
+                const customer = customerMap[task.customerId];
+                const companyNumber = customer ? (customer.companyNumber || '') : '';
+                return companyNumber.toLowerCase().includes(this.searchCompanyNumber);
+            });
+        }
+        
         // Filter by responsible person
         if (this.searchResponsible) {
             filteredTasks = filteredTasks.filter(task => 
@@ -353,7 +383,7 @@ class TaskManager {
 
         if (filteredTasks.length === 0) {
             let emptyMessage = 'No tasks yet. Click "Add Task" to get started.';
-            if (this.searchCompany || this.searchResponsible || this.searchDate || this.filterCustomerId) {
+            if (this.searchCompany || this.searchCompanyNumber || this.searchResponsible || this.searchDate || this.filterCustomerId) {
                 emptyMessage = 'No tasks found matching your filters.';
             }
             container.innerHTML = `
@@ -416,6 +446,8 @@ class TaskManager {
             const customerName = customer.name || 'Unknown Customer';
             const companyNumber = customer.companyNumber || 'No Number';
             const customerTasks = tasksByCustomer[customerId];
+            const isCompanyCollapsed = this.collapsedCompanies.has(customerId);
+            const companyToggleIcon = isCompanyCollapsed ? '▶' : '▼';
 
             const tasksHtml = customerTasks.map(task => {
                 const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'completed';
@@ -487,12 +519,13 @@ class TaskManager {
 
             return `
                 <div class="company-group">
-                    <div class="company-header">
+                    <div class="company-header" onclick="taskManager.toggleCompany('${customerId}')" style="cursor: pointer;" title="${isCompanyCollapsed ? 'Expand' : 'Collapse'} company tasks">
+                        <span class="company-toggle-icon">${companyToggleIcon}</span>
                         <div class="company-number">${this.escapeHtml(companyNumber)}</div>
                         <div class="company-name">${this.escapeHtml(customerName)}</div>
                         <div class="company-task-count">${customerTasks.length} task${customerTasks.length !== 1 ? 's' : ''}</div>
                     </div>
-                    <div class="company-tasks">
+                    <div class="company-tasks" style="${isCompanyCollapsed ? 'display: none;' : ''}">
                         ${tasksHtml}
                     </div>
                 </div>
@@ -530,14 +563,17 @@ class TaskManager {
     filterByCustomer(customerId) {
         this.filterCustomerId = customerId;
         this.searchCompany = '';
+        this.searchCompanyNumber = '';
         this.searchResponsible = '';
         this.searchDate = '';
         
         // Clear search inputs
         const searchCompanyInput = document.getElementById('task-search-company');
+        const searchCompanyNumberInput = document.getElementById('task-search-company-number');
         const searchResponsibleInput = document.getElementById('task-search-responsible');
         const searchDateInput = document.getElementById('task-search-date');
         if (searchCompanyInput) searchCompanyInput.value = '';
+        if (searchCompanyNumberInput) searchCompanyNumberInput.value = '';
         if (searchResponsibleInput) searchResponsibleInput.value = '';
         if (searchDateInput) searchDateInput.value = '';
         
