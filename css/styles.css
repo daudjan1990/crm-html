@@ -534,6 +534,21 @@ main {
     display: flex;
     align-items: center;
     gap: 15px;
+    transition: background 0.3s ease;
+}
+
+.company-header:hover {
+    background: linear-gradient(135deg, #1e3f99 0%, #1c2a3d 100%);
+}
+
+.company-toggle-icon {
+    font-size: 18px;
+    color: #d4af37;
+    width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
 }
 
 .company-number {
