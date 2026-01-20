@@ -31,8 +31,13 @@ class FinishedProjectsManager {
             exportPdfBtn.addEventListener('click', () => this.exportFinishedProjectsToPDF());
         }
 
-        // Initial render
-        this.renderFinishedProjects();
+        // Wait for storage to be ready before initial render
+        storage.initPromise.then(() => {
+            this.renderFinishedProjects();
+        }).catch(err => {
+            console.error('Error waiting for storage initialization:', err);
+            this.renderFinishedProjects(); // Render anyway to show empty state
+        });
     }
 
     renderFinishedProjects() {

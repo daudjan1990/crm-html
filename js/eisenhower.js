@@ -147,8 +147,13 @@ class EisenhowerManager {
             });
         }
 
-        // Initial render
-        this.renderMatrix();
+        // Wait for storage to be ready before initial render
+        storage.initPromise.then(() => {
+            this.renderMatrix();
+        }).catch(err => {
+            console.error('Error waiting for storage initialization:', err);
+            this.renderMatrix(); // Render anyway to show empty state
+        });
     }
 
     loadData() {
