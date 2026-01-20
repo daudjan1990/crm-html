@@ -233,10 +233,14 @@ main {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 10px;
     margin-top: 10px;
+    align-items: start;
 }
 
 .data-field {
     font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    min-height: 50px;
 }
 
 .data-field-label {
@@ -247,15 +251,21 @@ main {
 
 .data-field-value {
     color: #e4e6eb;
+    display: flex;
+    align-items: center;
+    min-height: 24px;
 }
 
 .status-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     padding: 3px 10px;
     border-radius: 12px;
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
+    min-height: 24px;
+    line-height: 1.2;
 }
 
 .status-pending {
@@ -492,12 +502,15 @@ main {
 
 /* Priority Badge Styles */
 .priority-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     padding: 3px 10px;
     border-radius: 12px;
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
+    min-height: 24px;
+    line-height: 1.2;
 }
 
 .priority-low {
