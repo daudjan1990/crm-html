@@ -59,7 +59,7 @@ class CSVManager {
             const customerA = customerMap[a] || {};
             const customerB = customerMap[b] || {};
             const companyNumA = customerA.companyNumber || '';
-            const companyNumB = customerMap[b].companyNumber || '';
+            const companyNumB = customerB.companyNumber || '';
             
             // Sort by company number first, then by name
             if (companyNumA && companyNumB) {
@@ -91,7 +91,10 @@ class CSVManager {
             // Add company header row (empty first column, company info in next columns)
             const companyName = customer.name || 'Unknown Customer';
             const companyNumber = customer.companyNumber || 'No Number';
-            rows.push(['', `=== ${companyName} ===`, companyNumber, '', '', '', '', '', '', '']);
+            const companyHeaderRow = new Array(headers.length).fill('');
+            companyHeaderRow[1] = `=== ${companyName} ===`;
+            companyHeaderRow[2] = companyNumber;
+            rows.push(companyHeaderRow);
             
             // Add tasks for this customer
             customerTasks.forEach(task => {
@@ -119,7 +122,7 @@ class CSVManager {
             });
             
             // Add empty row between companies for better readability
-            rows.push(['', '', '', '', '', '', '', '', '', '']);
+            rows.push(new Array(headers.length).fill(''));
         });
 
         const csvContent = rows.map(row => row.join(',')).join('\n');
