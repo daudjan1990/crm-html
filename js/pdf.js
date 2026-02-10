@@ -337,10 +337,44 @@ class PDFManager {
         const now = new Date();
         const dateStr = now.toLocaleString();
         
-        // Create customer lookup
+        // Create customer lookup with full customer objects
         const customerMap = {};
         customers.forEach(c => {
-            customerMap[c.id] = c.name;
+            customerMap[c.id] = c;
+        });
+
+        // Group tasks by customer
+        const tasksByCustomer = {};
+        tasks.forEach(task => {
+            if (!tasksByCustomer[task.customerId]) {
+                tasksByCustomer[task.customerId] = [];
+            }
+            tasksByCustomer[task.customerId].push(task);
+        });
+
+        // Sort customer IDs by company number or name
+        const sortedCustomerIds = Object.keys(tasksByCustomer).sort((a, b) => {
+            const customerA = customerMap[a] || {};
+            const customerB = customerMap[b] || {};
+            const companyNumA = customerA.companyNumber || '';
+            const companyNumB = customerB.companyNumber || '';
+            
+            // Sort by company number first, then by name
+            if (companyNumA && companyNumB) {
+                // Try numeric comparison if both are numeric
+                const numA = parseFloat(companyNumA);
+                const numB = parseFloat(companyNumB);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+                // Fall back to string comparison for alphanumeric
+                return companyNumA.localeCompare(companyNumB);
+            } else if (companyNumA) {
+                return -1;
+            } else if (companyNumB) {
+                return 1;
+            }
+            return (customerA.name || '').localeCompare(customerB.name || '');
         });
 
         let html = `
@@ -349,43 +383,56 @@ class PDFManager {
                     <h1 class="print-title">Task Report</h1>
                     <div class="print-meta">Generated: ${this.escapeHtml(dateStr)} | Total Tasks: ${tasks.length}</div>
                 </div>
-                
-                <table class="print-table">
-                    <thead>
-                        <tr>
-                            <th>Customer</th>
-                            <th>Description</th>
-                            <th>Deadline</th>
-                            <th>Responsible</th>
-                            <th>Priority</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
         `;
 
-        tasks.forEach((task, index) => {
-            const customerName = customerMap[task.customerId] || 'Unknown';
-            const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'completed';
-            const priority = task.priority || 'medium';
-            const status = task.status || 'pending';
+        // Generate tables grouped by company
+        sortedCustomerIds.forEach((customerId, companyIndex) => {
+            const customer = customerMap[customerId] || {};
+            const customerName = customer.name || 'Unknown Customer';
+            const companyNumber = customer.companyNumber || 'No Number';
+            const customerTasks = tasksByCustomer[customerId];
             
+            // Add company header
             html += `
-                <tr class="print-item">
-                    <td>${this.escapeHtml(customerName)}</td>
-                    <td><strong>${this.escapeHtml(task.description)}</strong>${isOverdue ? ' <span class="print-overdue">⚠ OVERDUE</span>' : ''}</td>
-                    <td>${this.formatDate(task.deadline)}</td>
-                    <td>${this.escapeHtml(task.responsible)}</td>
-                    <td><span class="print-badge print-badge-${priority}">${this.getPriorityLabel(priority)}</span></td>
-                    <td><span class="print-badge print-badge-${status}">${this.getStatusLabel(status)}</span></td>
-                </tr>
+                <div class="print-section" ${companyIndex > 0 ? 'style="page-break-before: auto; margin-top: 30px;"' : ''}>
+                    <h2 class="print-section-title">${this.escapeHtml(companyNumber)} - ${this.escapeHtml(customerName)}</h2>
+                    <div class="print-meta" style="margin-bottom: 10px;">Tasks: ${customerTasks.length}</div>
+                
+                    <table class="print-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Deadline</th>
+                                <th>Responsible</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            customerTasks.forEach((task) => {
+                const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'completed';
+                const priority = task.priority || 'medium';
+                const status = task.status || 'pending';
+                
+                html += `
+                    <tr class="print-item">
+                        <td><strong>${this.escapeHtml(task.description)}</strong>${isOverdue ? ' <span class="print-overdue">⚠ OVERDUE</span>' : ''}</td>
+                        <td>${this.formatDate(task.deadline)}</td>
+                        <td>${this.escapeHtml(task.responsible)}</td>
+                        <td><span class="print-badge print-badge-${priority}">${this.getPriorityLabel(priority)}</span></td>
+                        <td><span class="print-badge print-badge-${status}">${this.getStatusLabel(status)}</span></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
             `;
         });
-
-        html += `
-                    </tbody>
-                </table>
-        `;
 
         // Add detailed task notes
         const tasksWithNotes = tasks.filter(t => t.notes);
@@ -396,7 +443,8 @@ class PDFManager {
             `;
 
             tasksWithNotes.forEach((task, index) => {
-                const customerName = customerMap[task.customerId] || 'Unknown';
+                const customer = customerMap[task.customerId] || {};
+                const customerName = customer.name || 'Unknown';
                 html += `
                     <div class="print-item">
                         <div class="print-item-title">${this.escapeHtml(task.description)}</div>
@@ -420,7 +468,8 @@ class PDFManager {
             `;
 
             tasksWithAttachments.forEach((task, taskIndex) => {
-                const customerName = customerMap[task.customerId] || 'Unknown';
+                const customer = customerMap[task.customerId] || {};
+                const customerName = customer.name || 'Unknown';
                 html += `
                     <div class="print-item">
                         <div class="print-item-title">${this.escapeHtml(task.description)}</div>
