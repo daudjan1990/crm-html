@@ -73,6 +73,11 @@ class CRMApp {
                 window.projectPlanManager.renderProjectPlan();
             }
 
+            // Re-render project assistant when switching to project assistant tab
+            if (tabName === 'project-assistant' && window.projectAssistantManager) {
+                window.projectAssistantManager.renderAssistant();
+            }
+
             // Re-render Eisenhower Matrix when switching to eisenhower tab
             if (tabName === 'eisenhower' && window.eisenhowerManager) {
                 window.eisenhowerManager.renderMatrix();

@@ -17,6 +17,7 @@ A lightweight, client-side Customer Relationship Management (CRM) application bu
 - File attachments support (up to 50MB per file)
 - Automatic overdue task highlighting
 - Sort tasks by priority and deadline
+- Beginner-friendly **Project Assistant** tab with click-through phase checklists from project kickoff to closure
 
 ### 📊 Data Import/Export
 - **CSV Export**: Export customers and tasks to CSV format
@@ -195,7 +196,8 @@ crm-html/
 │   ├── customers.js    # Customer management
 │   ├── tasks.js        # Task management
 │   ├── csv.js          # CSV import/export
-│   └── pdf.js          # PDF generation
+│   ├── pdf.js          # PDF generation
+│   └── projectAssistant.js # Beginner project checklist assistant
 └── README.md           # This file
 ```
 
