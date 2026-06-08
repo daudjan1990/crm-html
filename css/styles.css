@@ -2527,5 +2527,80 @@ body.print-preview-open {
     }
 }
 
+/* Project Assistant */
+.project-assistant-intro {
+    margin-bottom: 16px;
+    color: #c7ccd6;
+}
+
+.project-assistant-summary {
+    margin-bottom: 20px;
+}
+
+.project-assistant-progress {
+    background: #242d3d;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.project-assistant-progress-text {
+    margin-bottom: 8px;
+    color: #e4e6eb;
+}
+
+.project-assistant-progress-bar {
+    width: 100%;
+    height: 10px;
+    background: #111827;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.project-assistant-progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%);
+    transition: width 0.3s ease;
+}
+
+.project-assistant-phases {
+    display: grid;
+    gap: 16px;
+}
+
+.project-assistant-phase {
+    background: linear-gradient(135deg, #242d3d 0%, #1e2836 100%);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-left: 4px solid #d4af37;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.project-assistant-phase h3 {
+    color: #d4af37;
+    margin-bottom: 6px;
+}
+
+.project-assistant-phase p {
+    color: #b8bec9;
+    margin-bottom: 12px;
+}
+
+.project-assistant-items {
+    display: grid;
+    gap: 8px;
+}
+
+.project-assistant-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    color: #e4e6eb;
+    cursor: pointer;
+}
+
+.project-assistant-checkbox {
+    margin-top: 2px;
+}
 
 
