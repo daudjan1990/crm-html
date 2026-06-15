@@ -39,27 +39,93 @@ class CSVManager {
             return;
         }
 
-        // Create customer lookup
+        // Create customer lookup with full customer objects
         const customerMap = {};
         customers.forEach(c => {
-            customerMap[c.id] = c.name;
+            customerMap[c.id] = c;
+        });
+
+        // Group tasks by customer
+        const tasksByCustomer = {};
+        tasks.forEach(task => {
+            if (!tasksByCustomer[task.customerId]) {
+                tasksByCustomer[task.customerId] = [];
+            }
+            tasksByCustomer[task.customerId].push(task);
+        });
+
+        // Sort customer IDs by company number or name
+        const sortedCustomerIds = Object.keys(tasksByCustomer).sort((a, b) => {
+            const customerA = customerMap[a] || {};
+            const customerB = customerMap[b] || {};
+            const companyNumA = customerA.companyNumber || '';
+            const companyNumB = customerB.companyNumber || '';
+            
+            // Sort by company number first, then by name
+            if (companyNumA && companyNumB) {
+                // Try numeric comparison if both are numeric
+                const numA = parseFloat(companyNumA);
+                const numB = parseFloat(companyNumB);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+                // Fall back to string comparison for alphanumeric
+                return companyNumA.localeCompare(companyNumB);
+            } else if (companyNumA) {
+                return -1;
+            } else if (companyNumB) {
+                return 1;
+            }
+            return (customerA.name || '').localeCompare(customerB.name || '');
         });
 
         // Define CSV headers
-        const headers = ['ID', 'Customer', 'Description', 'Notes', 'Deadline', 'Responsible Person', 'Status', 'Created At'];
+        const headers = ['ID', 'Customer', 'Company Number', 'Description', 'Notes', 'Deadline', 'Responsible Person', 'Priority', 'Status', 'Created At'];
+        const rows = [headers];
         
-        // Convert data to CSV format
-        const csvContent = this.convertToCSV(tasks, headers, (task) => [
-            task.id,
-            customerMap[task.customerId] || 'Unknown',
-            task.description,
-            task.notes || '',
-            task.deadline,
-            task.responsible,
-            task.status,
-            task.createdAt || ''
-        ]);
+        // Add tasks grouped by customer with company headers
+        sortedCustomerIds.forEach(customerId => {
+            const customer = customerMap[customerId] || {};
+            const customerTasks = tasksByCustomer[customerId];
+            
+            // Add company header row (empty first column, company info in next columns)
+            const companyName = customer.name || 'Unknown Customer';
+            const companyNumber = customer.companyNumber || 'No Number';
+            const companyHeaderRow = new Array(headers.length).fill('');
+            companyHeaderRow[1] = `=== ${companyName} ===`;
+            companyHeaderRow[2] = companyNumber;
+            rows.push(companyHeaderRow);
+            
+            // Add tasks for this customer
+            customerTasks.forEach(task => {
+                const row = [
+                    task.id,
+                    customer.name || 'Unknown',
+                    customer.companyNumber || '',
+                    task.description,
+                    task.notes || '',
+                    task.deadline,
+                    task.responsible,
+                    task.priority || 'medium',
+                    task.status,
+                    task.createdAt || ''
+                ];
+                // Escape special characters and wrap in quotes if needed
+                const escapedRow = row.map(field => {
+                    const fieldStr = String(field);
+                    if (fieldStr.includes(',') || fieldStr.includes('"') || fieldStr.includes('\n')) {
+                        return `"${fieldStr.replace(/"/g, '""')}"`;
+                    }
+                    return fieldStr;
+                });
+                rows.push(escapedRow);
+            });
+            
+            // Add empty row between companies for better readability
+            rows.push(new Array(headers.length).fill(''));
+        });
 
+        const csvContent = rows.map(row => row.join(',')).join('\n');
         this.downloadCSV(csvContent, 'tasks');
     }
 
